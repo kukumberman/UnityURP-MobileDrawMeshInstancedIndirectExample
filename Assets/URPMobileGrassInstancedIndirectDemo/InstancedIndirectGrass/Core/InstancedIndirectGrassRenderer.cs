@@ -15,6 +15,16 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     [Header("Internal")]
     public ComputeShader cullingComputeShader;
 
+    [Header("Debug")]
+    [SerializeField]
+    private bool _drawCellsGizmo;
+
+    [SerializeField]
+    private bool _drawVisibleCells;
+
+    [SerializeField]
+    private bool _drawInvisibleCells;
+
     [NonSerialized]
     public List<Vector3> allGrassPos = new List<Vector3>(); //user should update this list using C#
 
@@ -23,11 +33,13 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     public static InstancedIndirectGrassRenderer instance; // global ref to this script
 
     private int cellCountX = -1;
+    private int cellCountY = -1;
     private int cellCountZ = -1;
     private int dispatchCount = -1;
 
     //smaller the number, CPU needs more time, but GPU is faster
     private float cellSizeX = 10; //unity unit (m)
+    private float cellSizeY = 10;
     private float cellSizeZ = 10; //unity unit (m)
 
     private int instanceCountCache = -1;
@@ -39,13 +51,17 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
     private List<Vector3>[] cellPosWSsList; //for binning: binning will put each posWS into correct cell
     private float minX,
+        minY,
         minZ,
         maxX,
+        maxY,
         maxZ;
     private List<int> visibleCellIDList = new List<int>();
     private Plane[] cameraFrustumPlanes = new Plane[6];
 
     bool shouldBatchDispatch = true;
+
+    private List<MyCell> _myCells = new();
 
     //=====================================================
 
@@ -64,6 +80,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         //=====================================================================================================
         visibleCellIDList.Clear(); //fill in this cell ID list using CPU frustum culling first
         Camera cam = Camera.main;
+        _myCells.Clear();
 
         //Do frustum culling using per cell bound
         //https://docs.unity3d.com/ScriptReference/GeometryUtility.CalculateFrustumPlanes.html
@@ -81,18 +98,28 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         for (int i = 0; i < cellPosWSsList.Length; i++)
         {
             //create cell bound
-            Vector3 centerPosWS = new Vector3(i % cellCountX + 0.5f, 0, i / cellCountX + 0.5f);
+            //Vector3 centerPosWS = new Vector3(i % cellCountX + 0.5f, 0, i / cellCountX + 0.5f);
+            Vector3 centerPosWS = new Vector3(
+                (i % cellCountX) + 0.5f,
+                ((i / cellCountX) % cellCountY) + 0.5f,
+                (i / (cellCountX * cellCountY)) + 0.5f
+            );
             centerPosWS.x = Mathf.Lerp(minX, maxX, centerPosWS.x / cellCountX);
+            centerPosWS.y = Mathf.Lerp(minY, maxY, centerPosWS.y / cellCountY);
             centerPosWS.z = Mathf.Lerp(minZ, maxZ, centerPosWS.z / cellCountZ);
             Vector3 sizeWS = new Vector3(
                 Mathf.Abs(maxX - minX) / cellCountX,
-                0,
-                Mathf.Abs(maxX - minX) / cellCountX
+                Mathf.Abs(maxY - minY) / cellCountY,
+                Mathf.Abs(maxZ - minZ) / cellCountZ
             );
             Bounds cellBound = new Bounds(centerPosWS, sizeWS);
 
+            var cell = new MyCell { Bounds = cellBound, Visible = false };
+            _myCells.Add(cell);
+
             if (GeometryUtility.TestPlanesAABB(cameraFrustumPlanes, cellBound))
             {
+                cell.Visible = true;
                 visibleCellIDList.Add(i);
             }
         }
@@ -142,6 +169,10 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             }
             //============================================================================================
 
+            if (jobLength == 0)
+            {
+                continue;
+            }
             cullingComputeShader.Dispatch(0, Mathf.CeilToInt(jobLength / 64f), 1, 1); //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
             dispatchCount++;
         }
@@ -154,7 +185,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
         // Render 1 big drawcall using DrawMeshInstancedIndirect
         Bounds renderBound = new Bounds();
-        renderBound.SetMinMax(new Vector3(minX, 0, minZ), new Vector3(maxX, 0, maxZ)); //if camera frustum is not overlapping this bound, DrawMeshInstancedIndirect will not even render
+        renderBound.SetMinMax(new Vector3(minX, minY, minZ), new Vector3(maxX, maxY, maxZ)); //if camera frustum is not overlapping this bound, DrawMeshInstancedIndirect will not even render
         Graphics.DrawMeshInstancedIndirect(
             GetGrassMeshCache(),
             0,
@@ -263,25 +294,30 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
         //find all instances's posWS XZ bound min max
         minX = float.MaxValue;
+        minY = float.MaxValue;
         minZ = float.MaxValue;
         maxX = float.MinValue;
+        maxY = float.MinValue;
         maxZ = float.MinValue;
         for (int i = 0; i < allGrassPos.Count; i++)
         {
             Vector3 target = allGrassPos[i];
             minX = Mathf.Min(target.x, minX);
+            minY = Mathf.Min(target.y, minY);
             minZ = Mathf.Min(target.z, minZ);
             maxX = Mathf.Max(target.x, maxX);
+            maxY = Mathf.Max(target.y, maxY);
             maxZ = Mathf.Max(target.z, maxZ);
         }
 
         //decide cellCountX,Z here using min max
         //each cell is cellSizeX x cellSizeZ
         cellCountX = Mathf.CeilToInt((maxX - minX) / cellSizeX);
+        cellCountY = Mathf.CeilToInt((maxY - minY) / cellSizeY);
         cellCountZ = Mathf.CeilToInt((maxZ - minZ) / cellSizeZ);
 
         //init per cell posWS list memory
-        cellPosWSsList = new List<Vector3>[cellCountX * cellCountZ]; //flatten 2D array
+        cellPosWSsList = new List<Vector3>[cellCountX * cellCountY * cellCountZ]; //flatten 2D array
         for (int i = 0; i < cellPosWSsList.Length; i++)
         {
             cellPosWSsList[i] = new List<Vector3>();
@@ -297,12 +333,18 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
                 cellCountX - 1,
                 Mathf.FloorToInt(Mathf.InverseLerp(minX, maxX, pos.x) * cellCountX)
             ); //use min to force within 0~[cellCountX-1]
+            int yID = Mathf.Min(
+                cellCountY - 1,
+                Mathf.FloorToInt(Mathf.InverseLerp(minY, maxY, pos.y) * cellCountY)
+            );
             int zID = Mathf.Min(
                 cellCountZ - 1,
                 Mathf.FloorToInt(Mathf.InverseLerp(minZ, maxZ, pos.z) * cellCountZ)
             ); //use min to force within 0~[cellCountZ-1]
 
-            cellPosWSsList[xID + zID * cellCountX].Add(pos);
+            //cellPosWSsList[xID + zID * cellCountX].Add(pos);
+            // z * this.width * this.height + y * this.width + x
+            cellPosWSsList[zID * cellCountX * cellCountY + yID * cellCountX + xID].Add(pos);
         }
 
         //combine to a flatten array for compute buffer
@@ -358,4 +400,35 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             visibleInstancesOnlyPosWSIDBuffer
         );
     }
+
+    private void OnDrawGizmos()
+    {
+        if (_drawCellsGizmo)
+        {
+            DrawCells();
+        }
+    }
+
+    private void DrawCells()
+    {
+        foreach (var cell in _myCells)
+        {
+            var shouldRender =
+                (_drawVisibleCells && cell.Visible) || (_drawInvisibleCells && !cell.Visible);
+
+            if (!shouldRender)
+            {
+                continue;
+            }
+
+            Gizmos.color = cell.Visible ? Color.green : Color.red;
+            Gizmos.DrawWireCube(cell.Bounds.center, cell.Bounds.size * 0.99f);
+        }
+    }
+}
+
+public sealed class MyCell
+{
+    public Bounds Bounds;
+    public bool Visible;
 }
