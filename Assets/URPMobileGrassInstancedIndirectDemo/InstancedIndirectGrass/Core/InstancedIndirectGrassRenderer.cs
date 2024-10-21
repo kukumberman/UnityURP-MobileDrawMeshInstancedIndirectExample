@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-[ExecuteAlways]
 public class InstancedIndirectGrassRenderer : MonoBehaviour
 {
     [Header("Settings")]
@@ -70,7 +69,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         instance = this; // assign global ref using this script
     }
 
-    void LateUpdate()
+    void Update()
     {
         // recreate all buffers if needed
         UpdateAllInstanceTransformBufferIfNeeded();
@@ -261,6 +260,11 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             new Vector2(transform.localScale.x, transform.localScale.z)
         );
 
+        if (allGrassPos.Count == 0)
+        {
+            return;
+        }
+
         //early exit if no need to update buffer
         if (
             instanceCountCache == allGrassPos.Count
@@ -315,6 +319,8 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         cellCountX = Mathf.CeilToInt((maxX - minX) / cellSizeX);
         cellCountY = Mathf.CeilToInt((maxY - minY) / cellSizeY);
         cellCountZ = Mathf.CeilToInt((maxZ - minZ) / cellSizeZ);
+
+        cellCountY = Mathf.Max(1, cellCountY);
 
         //init per cell posWS list memory
         cellPosWSsList = new List<Vector3>[cellCountX * cellCountY * cellCountZ]; //flatten 2D array
