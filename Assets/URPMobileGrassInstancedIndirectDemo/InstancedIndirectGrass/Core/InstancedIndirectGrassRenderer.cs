@@ -11,6 +11,10 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     public float drawDistance = 125; //this setting will affect performance a lot!
     public Material instanceMaterial;
 
+    //smaller the number, CPU needs more time, but GPU is faster
+    [SerializeField]
+    private Vector3 cellSize = Vector3.one * 10; //unity unit (m)
+
     [Header("Internal")]
     public ComputeShader cullingComputeShader;
 
@@ -35,11 +39,6 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     private int cellCountY = -1;
     private int cellCountZ = -1;
     private int dispatchCount = -1;
-
-    //smaller the number, CPU needs more time, but GPU is faster
-    private float cellSizeX = 10; //unity unit (m)
-    private float cellSizeY = 10;
-    private float cellSizeZ = 10; //unity unit (m)
 
     private int instanceCountCache = -1;
     private Mesh cachedGrassMesh;
@@ -79,7 +78,6 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         //=====================================================================================================
         visibleCellIDList.Clear(); //fill in this cell ID list using CPU frustum culling first
         Camera cam = Camera.main;
-        _myCells.Clear();
 
         //Do frustum culling using per cell bound
         //https://docs.unity3d.com/ScriptReference/GeometryUtility.CalculateFrustumPlanes.html
@@ -94,31 +92,13 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         //TODO: (B)convert this forloop to job+burst? (UnityException: TestPlanesAABB can only be called from the main thread.)
         Profiler.BeginSample("CPU cell frustum culling (heavy)");
 
-        for (int i = 0; i < cellPosWSsList.Length; i++)
+        for (int i = 0; i < _myCells.Count; i++)
         {
-            //create cell bound
-            //Vector3 centerPosWS = new Vector3(i % cellCountX + 0.5f, 0, i / cellCountX + 0.5f);
-            Vector3 centerPosWS = new Vector3(
-                (i % cellCountX) + 0.5f,
-                ((i / cellCountX) % cellCountY) + 0.5f,
-                (i / (cellCountX * cellCountY)) + 0.5f
-            );
-            centerPosWS.x = Mathf.Lerp(minX, maxX, centerPosWS.x / cellCountX);
-            centerPosWS.y = Mathf.Lerp(minY, maxY, centerPosWS.y / cellCountY);
-            centerPosWS.z = Mathf.Lerp(minZ, maxZ, centerPosWS.z / cellCountZ);
-            Vector3 sizeWS = new Vector3(
-                Mathf.Abs(maxX - minX) / cellCountX,
-                Mathf.Abs(maxY - minY) / cellCountY,
-                Mathf.Abs(maxZ - minZ) / cellCountZ
-            );
-            Bounds cellBound = new Bounds(centerPosWS, sizeWS);
+            var cell = _myCells[i];
+            cell.Visible = GeometryUtility.TestPlanesAABB(cameraFrustumPlanes, cell.Bounds);
 
-            var cell = new MyCell { Bounds = cellBound, Visible = false };
-            _myCells.Add(cell);
-
-            if (GeometryUtility.TestPlanesAABB(cameraFrustumPlanes, cellBound))
+            if (cell.Visible)
             {
-                cell.Visible = true;
                 visibleCellIDList.Add(i);
             }
         }
@@ -316,9 +296,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
         //decide cellCountX,Z here using min max
         //each cell is cellSizeX x cellSizeZ
-        cellCountX = Mathf.CeilToInt((maxX - minX) / cellSizeX);
-        cellCountY = Mathf.CeilToInt((maxY - minY) / cellSizeY);
-        cellCountZ = Mathf.CeilToInt((maxZ - minZ) / cellSizeZ);
+        cellCountX = Mathf.CeilToInt((maxX - minX) / cellSize.x);
+        cellCountY = Mathf.CeilToInt((maxY - minY) / cellSize.y);
+        cellCountZ = Mathf.CeilToInt((maxZ - minZ) / cellSize.z);
 
         cellCountY = Mathf.Max(1, cellCountY);
 
@@ -327,6 +307,31 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         for (int i = 0; i < cellPosWSsList.Length; i++)
         {
             cellPosWSsList[i] = new List<Vector3>();
+        }
+
+        _myCells.Clear();
+
+        for (int i = 0; i < cellPosWSsList.Length; i++)
+        {
+            //create cell bound
+            //Vector3 centerPosWS = new Vector3(i % cellCountX + 0.5f, 0, i / cellCountX + 0.5f);
+            Vector3 centerPosWS = new Vector3(
+                (i % cellCountX) + 0.5f,
+                ((i / cellCountX) % cellCountY) + 0.5f,
+                (i / (cellCountX * cellCountY)) + 0.5f
+            );
+            centerPosWS.x = Mathf.Lerp(minX, maxX, centerPosWS.x / cellCountX);
+            centerPosWS.y = Mathf.Lerp(minY, maxY, centerPosWS.y / cellCountY);
+            centerPosWS.z = Mathf.Lerp(minZ, maxZ, centerPosWS.z / cellCountZ);
+            Vector3 sizeWS = new Vector3(
+                Mathf.Abs(maxX - minX) / cellCountX,
+                Mathf.Abs(maxY - minY) / cellCountY,
+                Mathf.Abs(maxZ - minZ) / cellCountZ
+            );
+            Bounds cellBound = new Bounds(centerPosWS, sizeWS);
+
+            var cell = new MyCell { Bounds = cellBound, Visible = false };
+            _myCells.Add(cell);
         }
 
         //binning, put each posWS into the correct cell
