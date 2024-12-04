@@ -59,7 +59,8 @@
             // 2) Invalid combinations are stripped. e.g variants with _MAIN_LIGHT_SHADOWS_CASCADE
             // but not _MAIN_LIGHT_SHADOWS are invalid and therefore stripped.
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+            // Dima: do not use shadow cascades, since in URP asset there is only 1 cascade enabled, TransformWorldToShadowCoord -> ComputeCascadeIndex would be wrong
+            //#pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile _ _SHADOWS_SOFT
