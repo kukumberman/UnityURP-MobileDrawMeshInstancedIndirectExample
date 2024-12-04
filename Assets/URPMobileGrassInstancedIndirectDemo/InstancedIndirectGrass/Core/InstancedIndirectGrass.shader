@@ -214,7 +214,7 @@
 
                 half3 V = viewWS / ViewWSLength;
 
-                half3 baseColor = tex2Dlod(_BaseColorTexture, float4(TRANSFORM_TEX(positionWS.xz,_BaseColorTexture),0,0)) * _BaseColor;//sample mip 0 only
+                half3 baseColor = tex2Dlod(_BaseColorTexture, float4(TRANSFORM_TEX(positionWS.xz,_BaseColorTexture),0,0)).rgb * _BaseColor;//sample mip 0 only
                 half3 albedo = lerp(_GroundColor,baseColor, IN.positionOS.y);
 
                 //indirect
