@@ -74,7 +74,7 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
         }
 
         //send all posWS to renderer
-        InstancedIndirectGrassRenderer.instance.allGrassPos = positions;
+        InstancedIndirectGrassRenderer.instance.SetGrassPositions(positions);
         cacheCount = positions.Count;
     }
 }

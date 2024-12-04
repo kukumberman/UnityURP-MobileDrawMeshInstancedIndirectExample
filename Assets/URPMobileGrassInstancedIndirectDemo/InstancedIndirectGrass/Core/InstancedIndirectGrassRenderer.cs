@@ -28,8 +28,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     [SerializeField]
     private bool _drawInvisibleCells;
 
-    [NonSerialized]
-    public List<Vector3> allGrassPos = new List<Vector3>(); //user should update this list using C#
+    private List<Vector3> allGrassPos = new List<Vector3>(); //user should update this list using C#
 
     //=====================================================
     [HideInInspector]
@@ -60,8 +59,22 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     bool shouldBatchDispatch = true;
 
     private List<MyCell> _myCells = new();
+    private int _kernelIndex = -1;
+    private uint _kernelThreadGroupSizeX;
 
     //=====================================================
+
+    private void Awake()
+    {
+        _kernelIndex = cullingComputeShader.FindKernel("CSMain");
+
+        cullingComputeShader.GetKernelThreadGroupSizes(
+            _kernelIndex,
+            out _kernelThreadGroupSizeX,
+            out _,
+            out _
+        );
+    }
 
     private void OnEnable()
     {
@@ -152,7 +165,8 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             {
                 continue;
             }
-            cullingComputeShader.Dispatch(0, Mathf.CeilToInt(jobLength / 64f), 1, 1); //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
+            var threadGroupsX = Mathf.CeilToInt(jobLength / (float)_kernelThreadGroupSizeX);
+            cullingComputeShader.Dispatch(_kernelIndex, threadGroupsX, 1, 1); //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
             dispatchCount++;
         }
 
@@ -207,6 +221,27 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         argsBuffer = null;
 
         instance = null;
+    }
+
+    public void SetGrassPositions(IList<Vector3> positions)
+    {
+        int divider = (int)_kernelThreadGroupSizeX;
+        int remainder = positions.Count % divider;
+        int extraSize = remainder == 0 ? 0 : divider - remainder;
+
+        allGrassPos = new List<Vector3>(positions.Count + extraSize);
+        allGrassPos.AddRange(positions);
+
+        CalculateBounds();
+
+        Vector3 temp = new Vector3(minX, minY, minZ);
+
+        for (int i = 0; i < extraSize; i++)
+        {
+            allGrassPos.Add(temp);
+        }
+
+        instanceCountCache = 0;
     }
 
     Mesh GetGrassMeshCache()
@@ -276,23 +311,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             ComputeBufferType.Append
         ); //uint only, per visible grass
 
-        //find all instances's posWS XZ bound min max
-        minX = float.MaxValue;
-        minY = float.MaxValue;
-        minZ = float.MaxValue;
-        maxX = float.MinValue;
-        maxY = float.MinValue;
-        maxZ = float.MinValue;
-        for (int i = 0; i < allGrassPos.Count; i++)
-        {
-            Vector3 target = allGrassPos[i];
-            minX = Mathf.Min(target.x, minX);
-            minY = Mathf.Min(target.y, minY);
-            minZ = Mathf.Min(target.z, minZ);
-            maxX = Mathf.Max(target.x, maxX);
-            maxY = Mathf.Max(target.y, maxY);
-            maxZ = Mathf.Max(target.z, maxZ);
-        }
+        CalculateBounds();
 
         //decide cellCountX,Z here using min max
         //each cell is cellSizeX x cellSizeZ
@@ -404,12 +423,37 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         instanceCountCache = allGrassPos.Count;
 
         //set buffer
-        cullingComputeShader.SetBuffer(0, "_AllInstancesPosWSBuffer", allInstancesPosWSBuffer);
         cullingComputeShader.SetBuffer(
-            0,
+            _kernelIndex,
+            "_AllInstancesPosWSBuffer",
+            allInstancesPosWSBuffer
+        );
+        cullingComputeShader.SetBuffer(
+            _kernelIndex,
             "_VisibleInstancesOnlyPosWSIDBuffer",
             visibleInstancesOnlyPosWSIDBuffer
         );
+    }
+
+    private void CalculateBounds()
+    {
+        //find all instances's posWS XZ bound min max
+        minX = float.MaxValue;
+        minY = float.MaxValue;
+        minZ = float.MaxValue;
+        maxX = float.MinValue;
+        maxY = float.MinValue;
+        maxZ = float.MinValue;
+        for (int i = 0; i < allGrassPos.Count; i++)
+        {
+            Vector3 target = allGrassPos[i];
+            minX = Mathf.Min(target.x, minX);
+            minY = Mathf.Min(target.y, minY);
+            minZ = Mathf.Min(target.z, minZ);
+            maxX = Mathf.Max(target.x, maxX);
+            maxY = Mathf.Max(target.y, maxY);
+            maxZ = Mathf.Max(target.z, maxZ);
+        }
     }
 
     private void OnDrawGizmos()

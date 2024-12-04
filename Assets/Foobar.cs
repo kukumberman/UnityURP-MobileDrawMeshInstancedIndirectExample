@@ -67,7 +67,7 @@ public class Foobar : MonoBehaviour
 
         var list = _vertices.Select(x => x.position).ToList();
 
-        InstancedIndirectGrassRenderer.instance.allGrassPos = list;
+        InstancedIndirectGrassRenderer.instance.SetGrassPositions(list);
 
         Debug.Log(list.Count, gameObject);
     }
