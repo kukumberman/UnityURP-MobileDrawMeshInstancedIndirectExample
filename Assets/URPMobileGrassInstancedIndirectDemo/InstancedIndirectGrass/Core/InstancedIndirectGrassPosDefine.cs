@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class InstancedIndirectGrassPosDefine : MonoBehaviour
+public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
 {
     private enum QuantityType
     {
@@ -22,9 +22,23 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
 
     private int _cacheCount = -1;
 
-    private void Start()
+    private bool _requiresUpdate;
+    private List<Vector3> _positions;
+
+    IReadOnlyList<Vector3> IGrassContainer.PositionsRef => _positions;
+
+    bool IGrassContainer.RequiresUpdate => _requiresUpdate;
+
+    private void OnEnable()
     {
         UpdatePosIfNeeded();
+
+        InstancedIndirectGrassRenderer.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        InstancedIndirectGrassRenderer.Remove(this);
     }
 
     private void Update()
@@ -59,7 +73,9 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
     {
         var count = GetCount();
 
-        if (count == _cacheCount)
+        _requiresUpdate = count != _cacheCount;
+
+        if (!_requiresUpdate)
             return;
 
         Debug.Log("UpdatePos (Slow)");
@@ -74,7 +90,7 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
         //////////////////////////////////////////////////////////////////////////
         //can define any posWS in this section, random is just an example
         //////////////////////////////////////////////////////////////////////////
-        List<Vector3> positions = new List<Vector3>(count);
+        _positions = new List<Vector3>(count);
         for (int i = 0; i < count; i++)
         {
             Vector3 pos = Vector3.zero;
@@ -85,11 +101,9 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
             //transform to posWS in C#
             pos += transform.position;
 
-            positions.Add(new Vector3(pos.x, pos.y, pos.z));
+            _positions.Add(new Vector3(pos.x, pos.y, pos.z));
         }
 
-        //send all posWS to renderer
-        InstancedIndirectGrassRenderer.instance.SetGrassPositions(positions);
-        _cacheCount = positions.Count;
+        _cacheCount = _positions.Count;
     }
 }

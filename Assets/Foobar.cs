@@ -1,8 +1,9 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.VFX;
 
-public class Foobar : MonoBehaviour
+public class Foobar : MonoBehaviour, IGrassContainer
 {
     [SerializeField]
     private MeshFilter _meshFilter;
@@ -28,9 +29,22 @@ public class Foobar : MonoBehaviour
 
     private MeshData.Vertex[] _vertices;
 
-    private void Start()
+    private List<Vector3> _positions;
+
+    IReadOnlyList<Vector3> IGrassContainer.PositionsRef => _positions;
+
+    bool IGrassContainer.RequiresUpdate => false;
+
+    private void OnEnable()
     {
         Setup();
+
+        InstancedIndirectGrassRenderer.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        InstancedIndirectGrassRenderer.Remove(this);
     }
 
     [ContextMenu(nameof(Setup))]
@@ -65,11 +79,9 @@ public class Foobar : MonoBehaviour
             _vertices = _vertices.Where(IsValidVertexWithNormal).ToArray();
         }
 
-        var list = _vertices.Select(x => x.position).ToList();
+        _positions = _vertices.Select(x => x.position).ToList();
 
-        InstancedIndirectGrassRenderer.instance.SetGrassPositions(list);
-
-        Debug.Log(list.Count, gameObject);
+        Debug.Log(_positions.Count, gameObject);
     }
 
     private bool IsValidVertexWithNormal(MeshData.Vertex vertex)

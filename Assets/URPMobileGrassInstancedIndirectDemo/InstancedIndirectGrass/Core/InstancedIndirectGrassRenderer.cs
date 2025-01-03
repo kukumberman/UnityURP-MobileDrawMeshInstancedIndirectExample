@@ -5,6 +5,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
 
+public interface IGrassContainer
+{
+    IReadOnlyList<Vector3> PositionsRef { get; }
+
+    bool RequiresUpdate { get; }
+}
+
+[DefaultExecutionOrder(-100)]
 public class InstancedIndirectGrassRenderer : MonoBehaviour
 {
     [Header("Settings")]
@@ -39,11 +47,15 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     [SerializeField]
     private bool _drawInvisibleCells;
 
+    private List<IGrassContainer> _grassContainers = new();
+
     private List<Vector3> allGrassPos = new List<Vector3>(); //user should update this list using C#
 
     //=====================================================
     [HideInInspector]
     public static InstancedIndirectGrassRenderer instance; // global ref to this script
+
+    private bool _requireUpdate = false;
 
     private int cellCountX = -1;
     private int cellCountY = -1;
@@ -99,6 +111,35 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
     void Update()
     {
+        foreach (var container in _grassContainers)
+        {
+            if (container.RequiresUpdate)
+            {
+                _requireUpdate = true;
+            }
+        }
+
+        if (_requireUpdate)
+        {
+            var count = 0;
+
+            foreach (var container in _grassContainers)
+            {
+                count += container.PositionsRef.Count;
+            }
+
+            var list = new List<Vector3>(count);
+
+            foreach (var container in _grassContainers)
+            {
+                list.AddRange(container.PositionsRef);
+            }
+
+            SetGrassPositions(list);
+
+            _requireUpdate = false;
+        }
+
         // recreate all buffers if needed
         UpdateAllInstanceTransformBufferIfNeeded();
 
@@ -234,7 +275,43 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         instance = null;
     }
 
-    public void SetGrassPositions(IList<Vector3> positions)
+    public static void Add(IGrassContainer container)
+    {
+        if (instance != null)
+        {
+            instance.AddContainer(container);
+        }
+    }
+
+    public static void Remove(IGrassContainer container)
+    {
+        if (instance != null)
+        {
+            instance.RemoveContainer(container);
+        }
+    }
+
+    public void AddContainer(IGrassContainer container)
+    {
+        if (!_grassContainers.Contains(container))
+        {
+            _grassContainers.Add(container);
+
+            _requireUpdate = true;
+        }
+    }
+
+    public void RemoveContainer(IGrassContainer container)
+    {
+        var removed = _grassContainers.Remove(container);
+
+        if (removed)
+        {
+            _requireUpdate = true;
+        }
+    }
+
+    private void SetGrassPositions(IList<Vector3> positions)
     {
         int divider = (int)_kernelThreadGroupSizeX;
         int remainder = positions.Count % divider;
