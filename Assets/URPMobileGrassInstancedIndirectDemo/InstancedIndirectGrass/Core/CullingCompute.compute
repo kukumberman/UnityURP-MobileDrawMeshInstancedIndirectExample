@@ -1,5 +1,7 @@
 ﻿#pragma kernel CSMain
 
+#pragma multi_compile_local __ CULLING_PER_CHUNK
+
 //Matrix4x4 v = Camera.main.worldToCameraMatrix;
 //Matrix4x4 p = Camera.main.projectionMatrix; //unity C# use opengl standard projection matrix
 //cullingComputeShader.SetMatrix("_VPMatrix", p * v); //set from C#
@@ -15,6 +17,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     //posWS -> posCS
     int index = id.x + _StartOffset;
+#if !CULLING_PER_CHUNK
     float3 posWS = _AllInstancesPosWSBuffer[index];
     float4 posCS = mul(_VPMatrix, float4(posWS, 1.0));
     float4 absPosCS = abs(posCS);
@@ -34,4 +37,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     {
         _VisibleInstancesOnlyPosWSIDBuffer.Append(index);
     }
+#else
+    _VisibleInstancesOnlyPosWSIDBuffer.Append(index);
+#endif
 }

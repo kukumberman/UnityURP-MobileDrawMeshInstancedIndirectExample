@@ -19,6 +19,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     public float drawDistance = 125; //this setting will affect performance a lot!
     public Material instanceMaterial;
 
+    [SerializeField]
+    private bool _useCullingPerGrass;
+
     //smaller the number, CPU needs more time, but GPU is faster
     [SerializeField]
     private Vector3 cellSize = Vector3.one * 10; //unity unit (m)
@@ -111,6 +114,16 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
     void Update()
     {
+        const string keyword = "CULLING_PER_CHUNK";
+        if (!_useCullingPerGrass)
+        {
+            cullingComputeShader.EnableKeyword(keyword);
+        }
+        else
+        {
+            cullingComputeShader.DisableKeyword(keyword);
+        }
+
         foreach (var container in _grassContainers)
         {
             if (container.RequiresUpdate)
