@@ -33,6 +33,10 @@
         //make SRP batcher happy
         [HideInInspector]_PivotPosWS("_PivotPosWS", Vector) = (0,0,0,0)
         [HideInInspector]_BoundSize("_BoundSize", Vector) = (1,1,0)
+
+        [Header(State)]
+        //use default culling because this shader is billboard 
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Integer) = 2
     }
 
     SubShader
@@ -41,7 +45,7 @@
 
         Pass
         {
-            Cull Back //use default culling because this shader is billboard 
+            Cull [_Cull]
             ZTest Less
             Tags { "LightMode" = "UniversalForward" }
 

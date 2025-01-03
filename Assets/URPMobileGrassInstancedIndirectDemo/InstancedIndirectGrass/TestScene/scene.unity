@@ -2987,6 +2987,8 @@ MonoBehaviour:
   instanceMaterial: {fileID: 2100000, guid: 2a0ca5d9e755e74448eaac7a643303db, type: 2}
   cellSize: {x: 10, y: 10, z: 10}
   _threshold: {x: 1.1, y: 1.5}
+  _useCustomMesh: 1
+  _customMesh: {fileID: 4770962406265387456, guid: 98638de773239db4f88b1ad92232f591, type: 3}
   cullingComputeShader: {fileID: 7200000, guid: 4ff257ce2a1c37546a9b544e669e976b, type: 3}
   _drawCellsGizmo: 1
   _drawVisibleCells: 1

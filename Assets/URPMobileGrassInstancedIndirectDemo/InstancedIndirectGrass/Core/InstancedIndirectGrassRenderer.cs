@@ -20,6 +20,12 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     [SerializeField]
     private Vector2 _threshold = new Vector2(1.1f, 1.5f);
 
+    [SerializeField]
+    private bool _useCustomMesh = false;
+
+    [SerializeField]
+    private Mesh _customMesh = null;
+
     [Header("Internal")]
     public ComputeShader cullingComputeShader;
 
@@ -61,6 +67,8 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     private List<int> visibleCellIDList = new List<int>();
     private Plane[] cameraFrustumPlanes = new Plane[6];
 
+    private Mesh _mesh;
+
     bool shouldBatchDispatch = true;
 
     private List<MyCell> _myCells = new();
@@ -71,6 +79,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
     private void Awake()
     {
+        _mesh = _useCustomMesh ? _customMesh : GetGrassMeshCache();
+        Debug.Assert(_mesh != null);
+
         _kernelIndex = cullingComputeShader.FindKernel("CSMain");
 
         cullingComputeShader.GetKernelThreadGroupSizes(
@@ -185,13 +196,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         // Render 1 big drawcall using DrawMeshInstancedIndirect
         Bounds renderBound = new Bounds();
         renderBound.SetMinMax(new Vector3(minX, minY, minZ), new Vector3(maxX, maxY, maxZ)); //if camera frustum is not overlapping this bound, DrawMeshInstancedIndirect will not even render
-        Graphics.DrawMeshInstancedIndirect(
-            GetGrassMeshCache(),
-            0,
-            instanceMaterial,
-            renderBound,
-            argsBuffer
-        );
+        Graphics.DrawMeshInstancedIndirect(_mesh, 0, instanceMaterial, renderBound, argsBuffer);
     }
 
     //private void OnGUI()
@@ -414,10 +419,10 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             ComputeBufferType.IndirectArguments
         );
 
-        args[0] = (uint)GetGrassMeshCache().GetIndexCount(0);
+        args[0] = (uint)_mesh.GetIndexCount(0);
         args[1] = (uint)allGrassPos.Count;
-        args[2] = (uint)GetGrassMeshCache().GetIndexStart(0);
-        args[3] = (uint)GetGrassMeshCache().GetBaseVertex(0);
+        args[2] = (uint)_mesh.GetIndexStart(0);
+        args[3] = (uint)_mesh.GetBaseVertex(0);
         args[4] = 0;
 
         argsBuffer.SetData(args);
