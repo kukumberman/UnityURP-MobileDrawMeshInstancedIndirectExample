@@ -5,22 +5,33 @@
 //cullingComputeShader.SetMatrix("_VPMatrix", p * v); //set from C#
 float4x4 _VPMatrix;
 float _MaxDrawDistance;
-uint _StartOffset;
+int _StartOffset;
 StructuredBuffer<float3> _AllInstancesPosWSBuffer; //will not change until instance count change
 AppendStructuredBuffer<uint> _VisibleInstancesOnlyPosWSIDBuffer; //will set counter to 0 per frame, then fill in by this compute shader
+float2 _Threshold;
 
 [numthreads(64,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-	//posWS -> posCS
-	float4 absPosCS = abs(mul(_VPMatrix,float4(_AllInstancesPosWSBuffer[id.x + _StartOffset],1.0)));
+    //posWS -> posCS
+    int index = id.x + _StartOffset;
+    float3 posWS = _AllInstancesPosWSBuffer[index];
+    float4 posCS = mul(_VPMatrix, float4(posWS, 1.0));
+    float4 absPosCS = abs(posCS);
 
-	//do culling test in clip space, result is the same as doing test in NDC space.
-	//prefer clip space here because doing culling test in clip space is faster than doing culling test in NDC, because we can skip 1 division.
-	//the test is using OpenGL standard projection matrix, because all matrix from unity C# is OpenGL standard
-	//if instance is inside camera frustum, and is within draw distance, we append it to _VisibleInstanceOnlyTransformBuffer
-	//y test allow 50% more threshold (hardcode for grass)
-	//x test allow 10% more threshold (hardcode for grass)
-    if (absPosCS.z <= absPosCS.w && absPosCS.y <= absPosCS.w*1.5 && absPosCS.x <= absPosCS.w*1.1 && absPosCS.w <= _MaxDrawDistance)
-		_VisibleInstancesOnlyPosWSIDBuffer.Append(id.x + _StartOffset);
+    //do culling test in clip space, result is the same as doing test in NDC space.
+    //prefer clip space here because doing culling test in clip space is faster than doing culling test in NDC, because we can skip 1 division.
+    //the test is using OpenGL standard projection matrix, because all matrix from unity C# is OpenGL standard
+    //if instance is inside camera frustum, and is within draw distance, we append it to _VisibleInstanceOnlyTransformBuffer
+
+    bool visible = true;
+    visible = visible && absPosCS.x <= absPosCS.w * _Threshold.x;
+    visible = visible && absPosCS.y <= absPosCS.w * _Threshold.y;
+    visible = visible && absPosCS.z <= absPosCS.w;
+    visible = visible && absPosCS.w <= _MaxDrawDistance;
+
+    if (visible)
+    {
+        _VisibleInstancesOnlyPosWSIDBuffer.Append(index);
+    }
 }

@@ -4,14 +4,25 @@ using UnityEngine;
 
 public class InstancedIndirectGrassPosDefine : MonoBehaviour
 {
-    [Range(1, 40000000)]
-    public int instanceCount = 1000000;
-    public float drawDistance = 125;
+    private enum QuantityType
+    {
+        InstanceCount,
+        Density,
+    }
 
-    private int cacheCount = -1;
+    [SerializeField]
+    private QuantityType _type;
 
-    // Start is called before the first frame update
-    void Start()
+    [Range(1, 40_000_000)]
+    [SerializeField]
+    private int _instanceCount = 1_000_000;
+
+    [SerializeField]
+    private float _density;
+
+    private int _cacheCount = -1;
+
+    private void Start()
     {
         UpdatePosIfNeeded();
     }
@@ -21,30 +32,34 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
         UpdatePosIfNeeded();
     }
 
-    //private void OnGUI()
-    //{
-    //    GUI.Label(
-    //        new Rect(300, 50, 200, 30),
-    //        "Instance Count: " + instanceCount / 1000000 + "Million"
-    //    );
-    //    instanceCount = Mathf.Max(
-    //        1,
-    //        (int)(
-    //            GUI.HorizontalSlider(new Rect(300, 100, 200, 30), instanceCount / 1000000f, 1, 10)
-    //        ) * 1000000
-    //    );
+    private void OnDrawGizmos()
+    {
+        var size = transform.lossyScale * 2;
+        size.y = 0;
+        Gizmos.DrawWireCube(transform.position, size);
+    }
 
-    //    GUI.Label(new Rect(300, 150, 200, 30), "Draw Distance: " + drawDistance);
-    //    drawDistance = Mathf.Max(
-    //        1,
-    //        (int)(GUI.HorizontalSlider(new Rect(300, 200, 200, 30), drawDistance / 25f, 1, 8)) * 25
-    //    );
-    //    InstancedIndirectGrassRenderer.instance.drawDistance = drawDistance;
-    //}
+    private int GetCount()
+    {
+        if (_type == QuantityType.InstanceCount)
+        {
+            return _instanceCount;
+        }
+
+        if (_type == QuantityType.Density)
+        {
+            var scale = transform.lossyScale;
+            return Mathf.FloorToInt(scale.x * scale.z * _density);
+        }
+
+        return 0;
+    }
 
     private void UpdatePosIfNeeded()
     {
-        if (instanceCount == cacheCount)
+        var count = GetCount();
+
+        if (count == _cacheCount)
             return;
 
         Debug.Log("UpdatePos (Slow)");
@@ -53,14 +68,14 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
         UnityEngine.Random.InitState(123);
 
         //auto keep density the same
-        float scale = Mathf.Sqrt((instanceCount / 4)) / 2f;
-        transform.localScale = new Vector3(scale, transform.localScale.y, scale);
+        //float scale = Mathf.Sqrt((instanceCount / 4)) / 2f;
+        //transform.localScale = new Vector3(scale, transform.localScale.y, scale);
 
         //////////////////////////////////////////////////////////////////////////
         //can define any posWS in this section, random is just an example
         //////////////////////////////////////////////////////////////////////////
-        List<Vector3> positions = new List<Vector3>(instanceCount);
-        for (int i = 0; i < instanceCount; i++)
+        List<Vector3> positions = new List<Vector3>(count);
+        for (int i = 0; i < count; i++)
         {
             Vector3 pos = Vector3.zero;
 
@@ -75,6 +90,6 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour
 
         //send all posWS to renderer
         InstancedIndirectGrassRenderer.instance.SetGrassPositions(positions);
-        cacheCount = positions.Count;
+        _cacheCount = positions.Count;
     }
 }

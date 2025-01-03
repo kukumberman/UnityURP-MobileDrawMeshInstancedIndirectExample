@@ -15,6 +15,11 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     [SerializeField]
     private Vector3 cellSize = Vector3.one * 10; //unity unit (m)
 
+    //y test allow 50% more threshold (hardcode for grass)
+    //x test allow 10% more threshold (hardcode for grass)
+    [SerializeField]
+    private Vector2 _threshold = new Vector2(1.1f, 1.5f);
+
     [Header("Internal")]
     public ComputeShader cullingComputeShader;
 
@@ -96,7 +101,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         //https://docs.unity3d.com/ScriptReference/GeometryUtility.CalculateFrustumPlanes.html
         //https://docs.unity3d.com/ScriptReference/GeometryUtility.TestPlanesAABB.html
         float cameraOriginalFarPlane = cam.farClipPlane;
-        cam.farClipPlane = drawDistance; //allow drawDistance control
+        cam.farClipPlane = Mathf.Min(cam.farClipPlane, drawDistance); //allow drawDistance control
         GeometryUtility.CalculateFrustumPlanes(cam, cameraFrustumPlanes); //Ordering: [0] = Left, [1] = Right, [2] = Down, [3] = Up, [4] = Near, [5] = Far
         cam.farClipPlane = cameraOriginalFarPlane; //revert far plane edit
 
@@ -130,6 +135,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         //set once only
         cullingComputeShader.SetMatrix("_VPMatrix", vp);
         cullingComputeShader.SetFloat("_MaxDrawDistance", drawDistance);
+        cullingComputeShader.SetVector("_Threshold", _threshold);
 
         //dispatch per visible cell
         dispatchCount = 0;
