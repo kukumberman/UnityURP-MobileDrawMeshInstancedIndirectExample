@@ -2289,7 +2289,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8906a5af56bfd344e9fcfdfc43d066a4, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 28.8
+      value: 28
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8906a5af56bfd344e9fcfdfc43d066a4, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3202,9 +3202,11 @@ MonoBehaviour:
   _useCustomMesh: 0
   _customMesh: {fileID: 4770962406265387456, guid: 98638de773239db4f88b1ad92232f591, type: 3}
   cullingComputeShader: {fileID: 7200000, guid: 4ff257ce2a1c37546a9b544e669e976b, type: 3}
+  shouldBatchDispatch: 1
   _drawCellsGizmo: 0
   _drawVisibleCells: 1
   _drawInvisibleCells: 1
+  _drawCellLabel: 0
 --- !u!4 &1709084318
 Transform:
   m_ObjectHideFlags: 0
@@ -3214,8 +3216,8 @@ Transform:
   m_GameObject: {fileID: 1709084316}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 50, y: 1, z: 50}
+  m_LocalPosition: {x: 0, y: 0, z: 25}
+  m_LocalScale: {x: 72, y: 1, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 652083985}

@@ -80,8 +80,6 @@ public class Foobar : MonoBehaviour, IGrassContainer
         }
 
         _positions = _vertices.Select(x => x.position).ToList();
-
-        Debug.Log(_positions.Count, gameObject);
     }
 
     private bool IsValidVertexWithNormal(MeshData.Vertex vertex)

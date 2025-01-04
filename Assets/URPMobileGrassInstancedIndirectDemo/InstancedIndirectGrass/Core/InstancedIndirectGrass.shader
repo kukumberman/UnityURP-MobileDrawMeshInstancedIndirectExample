@@ -89,7 +89,7 @@
 
             CBUFFER_START(UnityPerMaterial)
                 float3 _PivotPosWS;
-                float2 _BoundSize;
+                float3 _BoundSize;
 
                 float _GrassWidth;
                 float _GrassHeight;
@@ -154,7 +154,7 @@
                 float perGrassHeight = lerp(2,5,(sin(perGrassPivotPosWS.x*23.4643 + perGrassPivotPosWS.z) * 0.45 + 0.55)) * _GrassHeight;
 
                 //get "is grass stepped" data(bending) from RT
-                float2 grassBendingUV = ((perGrassPivotPosWS.xz - _PivotPosWS.xz) / _BoundSize) * 0.5 + 0.5;//claculate where is this grass inside bound (can optimize to 2 MAD)
+                float2 grassBendingUV = ((perGrassPivotPosWS.xz - _PivotPosWS.xz) / _BoundSize.xz) * 0.5 + 0.5;//claculate where is this grass inside bound (can optimize to 2 MAD)
                 float stepped = tex2Dlod(_GrassBendingRT, float4(grassBendingUV, 0, 0)).x;
 
                 //rotation(make grass LookAt() camera just like a billboard)

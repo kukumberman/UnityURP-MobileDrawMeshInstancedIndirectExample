@@ -48,7 +48,7 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
 
     private void OnDrawGizmos()
     {
-        var size = transform.lossyScale * 2;
+        var size = transform.lossyScale;
         size.y = 0;
         Gizmos.DrawWireCube(transform.position, size);
     }
@@ -78,14 +78,14 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
         if (!_requiresUpdate)
             return;
 
-        Debug.Log("UpdatePos (Slow)");
-
         //same seed to keep grass visual the same
         UnityEngine.Random.InitState(123);
 
         //auto keep density the same
         //float scale = Mathf.Sqrt((instanceCount / 4)) / 2f;
         //transform.localScale = new Vector3(scale, transform.localScale.y, scale);
+        var currentScale = transform.lossyScale;
+        var halfScale = currentScale * 0.5f;
 
         //////////////////////////////////////////////////////////////////////////
         //can define any posWS in this section, random is just an example
@@ -95,8 +95,8 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
         {
             Vector3 pos = Vector3.zero;
 
-            pos.x = UnityEngine.Random.Range(-1f, 1f) * transform.lossyScale.x;
-            pos.z = UnityEngine.Random.Range(-1f, 1f) * transform.lossyScale.z;
+            pos.x = UnityEngine.Random.Range(-1f, 1f) * halfScale.x;
+            pos.z = UnityEngine.Random.Range(-1f, 1f) * halfScale.z;
 
             //transform to posWS in C#
             pos += transform.position;
