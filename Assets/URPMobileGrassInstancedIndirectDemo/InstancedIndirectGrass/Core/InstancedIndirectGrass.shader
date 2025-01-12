@@ -176,8 +176,9 @@
                 bendDir.y = min(-0.5,bendDir.y);//prevent grass become too long if camera forward is / near parallel to ground
                 positionOS = lerp(positionOS.xyz + bendDir * positionOS.y / -bendDir.y, positionOS.xyz, stepped * 0.95 + 0.05);//don't fully bend, will produce ZFighting
 
+                // Dima: not use it
                 //per grass height scale
-                positionOS.y *= perGrassHeight;
+                // positionOS.y *= perGrassHeight;
 
                 //camera distance scale (make grass width larger if grass is far away to camera, to hide smaller than pixel size triangle flicker)        
                 float3 viewWS = _WorldSpaceCameraPos - perGrassPivotPosWS;
