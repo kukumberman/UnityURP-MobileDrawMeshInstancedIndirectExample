@@ -11,6 +11,7 @@ public class Foobar : MonoBehaviour, IGrassContainer
     [SerializeField]
     private int _sampleCount;
 
+    [Header("Normal")]
     [SerializeField]
     private bool _useFilterByNormal;
 
@@ -20,12 +21,29 @@ public class Foobar : MonoBehaviour, IGrassContainer
     [SerializeField]
     private Vector3 _targetNormal;
 
+    [Header("Mask")]
+    [SerializeField]
+    private bool _useFilterByTextureMask;
+
+    [SerializeField]
+    private Texture2D _maskTexture;
+
+    [Range(0, 7)]
+    [SerializeField]
+    private int _maskUvChannelIndex = 0;
+
+    [Range(0f, 1f)]
+    [SerializeField]
+    private float _maskThreshold01 = 0.5f;
+
     [Header("Gizmo")]
     [SerializeField]
     private bool _drawGizmo;
 
     [SerializeField]
     private float _gizmoRadius;
+
+    private Vector2Int _textureSize;
 
     private MeshData.Vertex[] _vertices;
 
@@ -34,6 +52,11 @@ public class Foobar : MonoBehaviour, IGrassContainer
     IReadOnlyList<Vector3> IGrassContainer.PositionsRef => _positions;
 
     bool IGrassContainer.RequiresUpdate => false;
+
+    private void Awake()
+    {
+        _positions = new List<Vector3>(_sampleCount);
+    }
 
     private void OnEnable()
     {
@@ -74,12 +97,25 @@ public class Foobar : MonoBehaviour, IGrassContainer
             _vertices[i].position = transform.TransformPoint(_vertices[i].position);
         }
 
+        IEnumerable<MeshData.Vertex> vertices = _vertices;
+
         if (_useFilterByNormal)
         {
-            _vertices = _vertices.Where(IsValidVertexWithNormal).ToArray();
+            vertices = vertices.Where(IsValidVertexWithNormal);
         }
 
-        _positions = _vertices.Select(x => x.position).ToList();
+        if (_useFilterByTextureMask && _maskTexture != null)
+        {
+            _textureSize = new Vector2Int(_maskTexture.width, _maskTexture.height);
+            vertices = vertices.Where(IsValidVertexOnTextureMask);
+        }
+
+        _vertices = vertices.ToArray();
+
+        var result = _vertices.Select(x => x.position);
+
+        _positions.Clear();
+        _positions.AddRange(result);
     }
 
     private bool IsValidVertexWithNormal(MeshData.Vertex vertex)
@@ -87,6 +123,25 @@ public class Foobar : MonoBehaviour, IGrassContainer
         var dot = Vector3.Dot(vertex.normal, _targetNormal);
 
         return dot > _normalDotThreshold;
+    }
+
+    private bool IsValidVertexOnTextureMask(MeshData.Vertex vertex)
+    {
+        if (_maskUvChannelIndex >= vertex.uvs.Length)
+        {
+            return true;
+        }
+
+        var uv = vertex.uvs[_maskUvChannelIndex];
+
+        var point = new Vector2Int(
+            Mathf.FloorToInt(uv.x * _textureSize.x),
+            Mathf.FloorToInt(uv.y * _textureSize.y)
+        );
+
+        var pixel = _maskTexture.GetPixel(point.x, point.y);
+
+        return pixel.r > _maskThreshold01;
     }
 
     private void OnDrawGizmos()
