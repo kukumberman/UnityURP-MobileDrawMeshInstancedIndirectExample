@@ -511,6 +511,13 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             "_VisibleInstancesOnlyPosWSIDBuffer",
             visibleInstancesOnlyPosWSIDBuffer
         );
+
+        int totalBytesPerMesh = MeshUtility.GetMeshByteSize(_mesh);
+        int totalBytes = totalBytesPerMesh * allGrassPos.Count;
+        int totalTriangleCount = _mesh.triangles.Length / 3 * allGrassPos.Count;
+
+        Debug.Log(ValueFormatter.PrettyBytes(totalBytes));
+        Debug.Log(ValueFormatter.PrettyCount(totalTriangleCount));
     }
 
     private void CalculateBounds()
