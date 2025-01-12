@@ -179,6 +179,7 @@
                 // Dima: not use it
                 //per grass height scale
                 // positionOS.y *= perGrassHeight;
+                positionOS.y *= _GrassHeight;
 
                 //camera distance scale (make grass width larger if grass is far away to camera, to hide smaller than pixel size triangle flicker)        
                 float3 viewWS = _WorldSpaceCameraPos - perGrassPivotPosWS;
