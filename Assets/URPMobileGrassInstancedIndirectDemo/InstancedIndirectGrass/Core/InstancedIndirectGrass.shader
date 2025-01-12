@@ -36,7 +36,7 @@
 
         [Header(State)]
         //use default culling because this shader is billboard 
-        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Integer) = 2
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Int) = 2
     }
 
     SubShader
