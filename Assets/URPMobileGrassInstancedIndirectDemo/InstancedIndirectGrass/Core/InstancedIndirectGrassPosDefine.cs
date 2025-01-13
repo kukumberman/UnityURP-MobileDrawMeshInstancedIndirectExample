@@ -13,7 +13,6 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
     [SerializeField]
     private QuantityType _type;
 
-    [Range(1, 40_000_000)]
     [SerializeField]
     private int _instanceCount = 1_000_000;
 
