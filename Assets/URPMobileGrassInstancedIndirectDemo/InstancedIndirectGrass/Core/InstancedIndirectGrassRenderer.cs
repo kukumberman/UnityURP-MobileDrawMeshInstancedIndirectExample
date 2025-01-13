@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 public interface IGrassContainer
 {
@@ -16,6 +18,9 @@ public interface IGrassContainer
 public class InstancedIndirectGrassRenderer : MonoBehaviour
 {
     [Header("Settings")]
+    [SerializeField]
+    private bool _receiveShadows = false;
+
     public float drawDistance = 125; //this setting will affect performance a lot!
     public Material instanceMaterial;
 
@@ -45,6 +50,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField]
+    private int _debugVisibleCount = 0;
+
+    [SerializeField]
     private bool _drawCellsGizmo;
 
     [SerializeField]
@@ -64,6 +72,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     [HideInInspector]
     public static InstancedIndirectGrassRenderer instance; // global ref to this script
 
+    private Camera cam;
     private bool _requireUpdate = false;
 
     private Vector3Int cellCount = Vector3Int.zero;
@@ -93,10 +102,17 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     private int _kernelIndex = -1;
     private uint _kernelThreadGroupSizeX;
 
+    private int[] argsBufferOutput = new int[5];
+
     //=====================================================
 
     private void Awake()
     {
+        cam = Camera.main;
+
+        SetupReceiveShadows();
+        SetupComputeShaderCulling();
+
         _mesh = _useCustomMesh ? _customMesh : GetGrassMeshCache();
         Debug.Assert(_mesh != null);
 
@@ -115,18 +131,14 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         instance = this; // assign global ref using this script
     }
 
-    void Update()
+    private void OnValidate()
     {
-        const string keyword = "CULLING_PER_CHUNK";
-        if (!_useCullingPerGrass)
-        {
-            cullingComputeShader.EnableKeyword(keyword);
-        }
-        else
-        {
-            cullingComputeShader.DisableKeyword(keyword);
-        }
+        SetupReceiveShadows();
+        SetupComputeShaderCulling();
+    }
 
+    private void Update()
+    {
         foreach (var container in _grassContainers)
         {
             if (container.RequiresUpdate)
@@ -163,7 +175,6 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         // rough quick big cell frustum culling in CPU first
         //=====================================================================================================
         visibleCellIDList.Clear(); //fill in this cell ID list using CPU frustum culling first
-        Camera cam = Camera.main;
 
         //Do frustum culling using per cell bound
         //https://docs.unity3d.com/ScriptReference/GeometryUtility.CalculateFrustumPlanes.html
@@ -205,44 +216,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         cullingComputeShader.SetFloat("_MaxDrawDistance", drawDistance);
         cullingComputeShader.SetVector("_Threshold", _threshold);
 
-        //dispatch per visible cell
-        dispatchCount = 0;
-        for (int i = 0; i < visibleCellIDList.Count; i++)
-        {
-            int targetCellFlattenID = visibleCellIDList[i];
-            int memoryOffset = 0;
-            for (int j = 0; j < targetCellFlattenID; j++)
-            {
-                memoryOffset += cellPosWSsList[j].Count;
-            }
-            cullingComputeShader.SetInt("_StartOffset", memoryOffset); //culling read data started at offseted pos, will start from cell's total offset in memory
-            int jobLength = cellPosWSsList[targetCellFlattenID].Count;
-
-            //============================================================================================
-            //batch n dispatchs into 1 dispatch, if memory is continuous in allInstancesPosWSBuffer
-            if (shouldBatchDispatch)
-            {
-                while (
-                    (i < visibleCellIDList.Count - 1)
-                    && //test this first to avoid out of bound access to visibleCellIDList
-                    (visibleCellIDList[i + 1] == visibleCellIDList[i] + 1)
-                )
-                {
-                    //if memory is continuous, append them together into the same dispatch call
-                    jobLength += cellPosWSsList[visibleCellIDList[i + 1]].Count;
-                    i++;
-                }
-            }
-            //============================================================================================
-
-            if (jobLength == 0)
-            {
-                continue;
-            }
-            var threadGroupsX = Mathf.CeilToInt(jobLength / (float)_kernelThreadGroupSizeX);
-            cullingComputeShader.Dispatch(_kernelIndex, threadGroupsX, 1, 1); //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
-            dispatchCount++;
-        }
+        Profiler.BeginSample("ComputeShader.Dispatch (cullingComputeShader)");
+        DispatchComputeShaderCulling();
+        Profiler.EndSample();
 
         //====================================================================================
         // Final 1 big DrawMeshInstancedIndirect draw call
@@ -250,9 +226,22 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         // GPU per instance culling finished, copy visible count to argsBuffer, to setup DrawMeshInstancedIndirect's draw amount
         ComputeBuffer.CopyCount(visibleInstancesOnlyPosWSIDBuffer, argsBuffer, 4);
 
+#if UNITY_EDITOR
+        argsBuffer.GetData(argsBufferOutput);
+        _debugVisibleCount = argsBufferOutput[1];
+#endif
+
         // Render 1 big drawcall using DrawMeshInstancedIndirect
         //if camera frustum is not overlapping this bound, DrawMeshInstancedIndirect will not even render
-        Graphics.DrawMeshInstancedIndirect(_mesh, 0, instanceMaterial, _bounds, argsBuffer);
+        Graphics.DrawMeshInstancedIndirect(
+            _mesh,
+            0,
+            instanceMaterial,
+            _bounds,
+            argsBuffer,
+            receiveShadows: false, // Dima: does nothing in URP
+            castShadows: ShadowCastingMode.Off
+        );
     }
 
     //private void OnGUI()
@@ -323,6 +312,28 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         if (removed)
         {
             _requireUpdate = true;
+        }
+    }
+
+    private void SetupReceiveShadows()
+    {
+        CoreUtils.SetKeyword(
+            instanceMaterial,
+            ShaderKeywordStrings._RECEIVE_SHADOWS_OFF,
+            _receiveShadows == false
+        );
+    }
+
+    private void SetupComputeShaderCulling()
+    {
+        const string keyword = "CULLING_PER_CHUNK";
+        if (!_useCullingPerGrass)
+        {
+            cullingComputeShader.EnableKeyword(keyword);
+        }
+        else
+        {
+            cullingComputeShader.DisableKeyword(keyword);
         }
     }
 
@@ -518,9 +529,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             * allGrassPos.Count;
         int totalTriangleCount = _mesh.triangles.Length / 3 * allGrassPos.Count;
 
-        Debug.Log(allGrassPos.Count);
-        Debug.Log(ValueFormatter.PrettyBytes(totalBytes));
-        Debug.Log(ValueFormatter.PrettyCount(totalTriangleCount));
+        Debug.LogFormat("Grass instance count: {0}", allGrassPos.Count);
+        Debug.LogFormat("VRAM consumption: {0}", ValueFormatter.PrettyBytes(totalBytes));
+        Debug.LogFormat("Triangles: {0}", ValueFormatter.PrettyCount(totalTriangleCount));
     }
 
     private void CalculateBounds()
@@ -555,6 +566,48 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         _bounds.SetMinMax(min, max);
 
         _coord = new MyCoordinateConverter(min, max, cellCount);
+    }
+
+    private void DispatchComputeShaderCulling()
+    {
+        //dispatch per visible cell
+        dispatchCount = 0;
+        for (int i = 0; i < visibleCellIDList.Count; i++)
+        {
+            int targetCellFlattenID = visibleCellIDList[i];
+            int memoryOffset = 0;
+            for (int j = 0; j < targetCellFlattenID; j++)
+            {
+                memoryOffset += cellPosWSsList[j].Count;
+            }
+            cullingComputeShader.SetInt("_StartOffset", memoryOffset); //culling read data started at offseted pos, will start from cell's total offset in memory
+            int jobLength = cellPosWSsList[targetCellFlattenID].Count;
+
+            //============================================================================================
+            //batch n dispatchs into 1 dispatch, if memory is continuous in allInstancesPosWSBuffer
+            if (shouldBatchDispatch)
+            {
+                while (
+                    (i < visibleCellIDList.Count - 1)
+                    && //test this first to avoid out of bound access to visibleCellIDList
+                    (visibleCellIDList[i + 1] == visibleCellIDList[i] + 1)
+                )
+                {
+                    //if memory is continuous, append them together into the same dispatch call
+                    jobLength += cellPosWSsList[visibleCellIDList[i + 1]].Count;
+                    i++;
+                }
+            }
+            //============================================================================================
+
+            if (jobLength == 0)
+            {
+                continue;
+            }
+            var threadGroupsX = Mathf.CeilToInt(jobLength / (float)_kernelThreadGroupSizeX);
+            cullingComputeShader.Dispatch(_kernelIndex, threadGroupsX, 1, 1); //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
+            dispatchCount++;
+        }
     }
 
     private void OnDrawGizmos()

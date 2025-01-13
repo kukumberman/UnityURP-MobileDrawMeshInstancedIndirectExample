@@ -53,6 +53,8 @@
             #pragma vertex vert
             #pragma fragment frag
 
+            #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+
             // -------------------------------------
             // Universal Render Pipeline keywords
             // When doing custom shaders you most often want to copy and paste these #pragmas
