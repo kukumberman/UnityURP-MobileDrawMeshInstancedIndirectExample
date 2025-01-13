@@ -6,6 +6,7 @@ using UnityEngine;
 [Serializable]
 public sealed class GridPlacement3D
 {
+    public Vector3 Origin;
     public Vector3Int GridSize = Vector3Int.one;
     public Vector3 Pivot = new Vector3(0.5f, 0.5f, 0.5f);
     public Vector3 ChunkSize = Vector3.one * 3;
@@ -40,6 +41,7 @@ public sealed class GridPlacement3D
 
         pos.Scale(ChunkSize);
         pos += spacingOffset;
+        pos += Origin;
         return pos;
     }
 
@@ -54,6 +56,7 @@ public sealed class GridPlacement3D
         );
         Vector3 pos = gridOffset + xyz + centerOffset;
         Vector3 position = Vector3.Scale(pos, ChunkSize) + pos * Spacing;
+        position += Origin;
         return position;
     }
 
@@ -78,6 +81,48 @@ public sealed class GridPlacement3D
         center.y = Mathf.Lerp(-halfSize.y, halfSize.y, 1f - Pivot.y);
         center.y = Mathf.Lerp(-halfSize.z, halfSize.z, 1f - Pivot.z);
 
-        return center;
+        return center + Origin;
+    }
+
+    public Bounds GetBounds()
+    {
+        return new Bounds(GetCenter(), GetTotalSize());
+    }
+
+    public bool WorldToGrid(Vector3 worldPosition, out Vector3Int gridPosition)
+    {
+        gridPosition = Vector3Int.zero;
+
+        if (Spacing > 0)
+        {
+            return false;
+        }
+
+        var bounds = GetBounds();
+
+        if (!bounds.Contains(worldPosition))
+        {
+            return false;
+        }
+
+        var min = bounds.min;
+        var max = bounds.max;
+
+        gridPosition.x = Mathf.Min(
+            GridSize.x - 1,
+            Mathf.FloorToInt(Mathf.InverseLerp(min.x, max.x, worldPosition.x) * GridSize.x)
+        );
+
+        gridPosition.y = Mathf.Min(
+            GridSize.y - 1,
+            Mathf.FloorToInt(Mathf.InverseLerp(min.y, max.y, worldPosition.y) * GridSize.y)
+        );
+
+        gridPosition.z = Mathf.Min(
+            GridSize.z - 1,
+            Mathf.FloorToInt(Mathf.InverseLerp(min.z, max.z, worldPosition.z) * GridSize.z)
+        );
+
+        return true;
     }
 }
