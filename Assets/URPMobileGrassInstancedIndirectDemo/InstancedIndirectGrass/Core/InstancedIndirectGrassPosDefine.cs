@@ -32,12 +32,12 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
     {
         UpdatePosIfNeeded();
 
-        InstancedIndirectGrassRenderer.Add(this);
+        GrassManager.Add(this);
     }
 
     private void OnDisable()
     {
-        InstancedIndirectGrassRenderer.Remove(this);
+        GrassManager.Remove(this);
     }
 
     private void Update()

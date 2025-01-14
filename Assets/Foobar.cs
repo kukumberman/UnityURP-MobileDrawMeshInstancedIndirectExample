@@ -62,12 +62,12 @@ public class Foobar : MonoBehaviour, IGrassContainer
     {
         Setup();
 
-        InstancedIndirectGrassRenderer.Add(this);
+        GrassManager.Add(this);
     }
 
     private void OnDisable()
     {
-        InstancedIndirectGrassRenderer.Remove(this);
+        GrassManager.Remove(this);
     }
 
     [ContextMenu(nameof(Setup))]
