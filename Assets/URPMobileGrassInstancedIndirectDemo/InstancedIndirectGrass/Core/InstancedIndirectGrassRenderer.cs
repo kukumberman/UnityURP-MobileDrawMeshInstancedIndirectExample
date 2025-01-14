@@ -131,6 +131,11 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         // recreate all buffers if needed
         UpdateAllInstanceTransformBufferIfNeeded();
 
+        if (allGrassPos.Count == 0)
+        {
+            return;
+        }
+
         //=====================================================================================================
         // rough quick big cell frustum culling in CPU first
         //=====================================================================================================
