@@ -105,7 +105,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         _mesh = _useCustomMesh ? _customMesh : GetGrassMeshCache();
         Debug.Assert(_mesh != null);
 
-        _kernelIndex = cullingComputeShader.FindKernel("CSMain");
+        _kernelIndex = cullingComputeShader.FindKernel(
+            GrassRendererConstants.ComputeShaderKernelMain
+        );
 
         cullingComputeShader.GetKernelThreadGroupSizes(
             _kernelIndex,
@@ -152,7 +154,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         //slow loop
         //TODO: (A)replace this forloop by a quadtree test?
         //TODO: (B)convert this forloop to job+burst? (UnityException: TestPlanesAABB can only be called from the main thread.)
-        Profiler.BeginSample("CPU cell frustum culling (heavy)");
+        Profiler.BeginSample(GrassRendererConstants.ProfilerSample.FrustumCulling);
 
         for (int i = 0; i < _myCells.Count; i++)
         {
@@ -177,11 +179,17 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         visibleInstancesOnlyPosWSIDBuffer.SetCounterValue(0);
 
         //set once only
-        cullingComputeShader.SetMatrix("_VPMatrix", vp);
-        cullingComputeShader.SetFloat("_MaxDrawDistance", drawDistance);
-        cullingComputeShader.SetVector("_Threshold", _threshold);
+        cullingComputeShader.SetMatrix(GrassRendererConstants.MaterialParam.VPMatrix, vp);
+        cullingComputeShader.SetFloat(
+            GrassRendererConstants.MaterialParam.DrawDistance,
+            drawDistance
+        );
+        cullingComputeShader.SetVector(
+            GrassRendererConstants.MaterialParam.CullingThreshold,
+            _threshold
+        );
 
-        Profiler.BeginSample("ComputeShader.Dispatch (cullingComputeShader)");
+        Profiler.BeginSample(GrassRendererConstants.ProfilerSample.ComputeShaderDispatch);
         DispatchComputeShaderCulling();
         Profiler.EndSample();
 
@@ -209,24 +217,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         );
     }
 
-    //private void OnGUI()
-    //{
-    //    GUI.contentColor = Color.black;
-    //    GUI.Label(
-    //        new Rect(200, 0, 400, 60),
-    //        $"After CPU cell frustum culling,\n"
-    //            + $"-Visible cell count = {visibleCellIDList.Count}/{cellCountX * cellCountZ}\n"
-    //            + $"-Real compute dispatch count = {dispatchCount} (saved by batching = {visibleCellIDList.Count - dispatchCount})"
-    //    );
-
-    //    shouldBatchDispatch = GUI.Toggle(
-    //        new Rect(400, 400, 200, 100),
-    //        shouldBatchDispatch,
-    //        "shouldBatchDispatch"
-    //    );
-    //}
-
-    void OnDisable()
+    private void OnDisable()
     {
         //release all compute buffers
         if (allInstancesPosWSBuffer != null)
@@ -285,7 +276,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         instanceCountCache = 0;
     }
 
-    Mesh GetGrassMeshCache()
+    private Mesh GetGrassMeshCache()
     {
         if (!cachedGrassMesh)
         {
@@ -307,11 +298,11 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         return cachedGrassMesh;
     }
 
-    void UpdateAllInstanceTransformBufferIfNeeded()
+    private void UpdateAllInstanceTransformBufferIfNeeded()
     {
         //always update
-        instanceMaterial.SetVector("_PivotPosWS", _bounds.center);
-        instanceMaterial.SetVector("_BoundSize", _bounds.size);
+        instanceMaterial.SetVector(GrassRendererConstants.MaterialParam.PivotPos, _bounds.center);
+        instanceMaterial.SetVector(GrassRendererConstants.MaterialParam.BoundsSize, _bounds.size);
 
         if (allGrassPos.Count == 0)
         {
@@ -408,9 +399,12 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         }
 
         allInstancesPosWSBuffer.SetData(allGrassPosWSSortedByCell);
-        instanceMaterial.SetBuffer("_AllInstancesTransformBuffer", allInstancesPosWSBuffer);
         instanceMaterial.SetBuffer(
-            "_VisibleInstanceOnlyTransformIDBuffer",
+            GrassRendererConstants.MaterialParam.AllInstanceBuffer,
+            allInstancesPosWSBuffer
+        );
+        instanceMaterial.SetBuffer(
+            GrassRendererConstants.MaterialParam.VisibleIndexBuffer,
             visibleInstancesOnlyPosWSIDBuffer
         );
 
@@ -443,12 +437,12 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         //set buffer
         cullingComputeShader.SetBuffer(
             _kernelIndex,
-            "_AllInstancesPosWSBuffer",
+            GrassRendererConstants.MaterialParam.AllInstanceBuffer,
             allInstancesPosWSBuffer
         );
         cullingComputeShader.SetBuffer(
             _kernelIndex,
-            "_VisibleInstancesOnlyPosWSIDBuffer",
+            GrassRendererConstants.MaterialParam.VisibleIndexBuffer,
             visibleInstancesOnlyPosWSIDBuffer
         );
 
@@ -509,7 +503,11 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             {
                 memoryOffset += cellPosWSsList[j].Count;
             }
-            cullingComputeShader.SetInt("_StartOffset", memoryOffset); //culling read data started at offseted pos, will start from cell's total offset in memory
+            //culling read data started at offseted pos, will start from cell's total offset in memory
+            cullingComputeShader.SetInt(
+                GrassRendererConstants.MaterialParam.StartOffset,
+                memoryOffset
+            );
             int jobLength = cellPosWSsList[targetCellFlattenID].Count;
 
             //============================================================================================
@@ -533,8 +531,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             {
                 continue;
             }
+            //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
             var threadGroupsX = Mathf.CeilToInt(jobLength / (float)_kernelThreadGroupSizeX);
-            cullingComputeShader.Dispatch(_kernelIndex, threadGroupsX, 1, 1); //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
+            cullingComputeShader.Dispatch(_kernelIndex, threadGroupsX, 1, 1);
             dispatchCount++;
         }
     }

@@ -117,8 +117,8 @@
 
                 half _RandomNormal;
 
-                StructuredBuffer<float3> _AllInstancesTransformBuffer;
-                StructuredBuffer<uint> _VisibleInstanceOnlyTransformIDBuffer;
+                StructuredBuffer<float3> _AllInstancesPosWSBuffer;
+                StructuredBuffer<uint> _VisibleInstancesOnlyPosWSIDBuffer;
             CBUFFER_END
 
             sampler2D _GrassBendingRT;
@@ -151,7 +151,8 @@
             {
                 Varyings OUT;
 
-                float3 perGrassPivotPosWS = _AllInstancesTransformBuffer[_VisibleInstanceOnlyTransformIDBuffer[instanceID]];//we pre-transform to posWS in C# now
+                //we pre-transform to posWS in C# now
+                float3 perGrassPivotPosWS = _AllInstancesPosWSBuffer[_VisibleInstancesOnlyPosWSIDBuffer[instanceID]];
 
                 float perGrassHeight = lerp(2,5,(sin(perGrassPivotPosWS.x*23.4643 + perGrassPivotPosWS.z) * 0.45 + 0.55)) * _GrassHeight;
 
