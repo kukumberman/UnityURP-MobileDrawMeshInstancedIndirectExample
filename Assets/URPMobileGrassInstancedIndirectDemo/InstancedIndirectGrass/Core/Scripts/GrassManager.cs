@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [DefaultExecutionOrder(-100)]
@@ -7,11 +8,22 @@ public class GrassManager : MonoBehaviour
     public static GrassManager instance = null;
 
     [SerializeField]
-    private InstancedIndirectGrassRenderer _renderer;
+    private InstancedIndirectGrassRenderer[] _renderers;
 
-    private List<IGrassContainer> _grassContainers = new();
+    private Dictionary<string, GrassEntry> _grassMap;
 
-    private bool _requireUpdate = false;
+    private void Awake()
+    {
+        _grassMap = _renderers.ToDictionary(
+            x => x.Id,
+            x => new GrassEntry
+            {
+                Id = x.Id,
+                Renderer = x,
+                Containers = new List<IGrassContainer>()
+            }
+        );
+    }
 
     private void OnEnable()
     {
@@ -20,7 +32,10 @@ public class GrassManager : MonoBehaviour
 
     private void Update()
     {
-        UpdateIfNeeded();
+        foreach (var item in _grassMap.Values)
+        {
+            UpdateIfNeeded(item);
+        }
     }
 
     public static void Add(IGrassContainer container)
@@ -41,58 +56,92 @@ public class GrassManager : MonoBehaviour
 
     public void AddContainer(IGrassContainer container)
     {
-        if (!_grassContainers.Contains(container))
+        if (!_grassMap.ContainsKey(container.Id))
         {
-            _grassContainers.Add(container);
+            return;
+        }
 
-            _requireUpdate = true;
+        var entry = _grassMap[container.Id];
+
+        if (!entry.Containers.Contains(container))
+        {
+            entry.Containers.Add(container);
+
+            entry.RequireUpdate = true;
         }
     }
 
     public void RemoveContainer(IGrassContainer container)
     {
-        var removed = _grassContainers.Remove(container);
+        if (!_grassMap.ContainsKey(container.Id))
+        {
+            return;
+        }
+
+        var entry = _grassMap[container.Id];
+
+        var removed = entry.Containers.Remove(container);
 
         if (removed)
         {
-            _requireUpdate = true;
+            entry.RequireUpdate = true;
         }
     }
 
-    private void UpdateIfNeeded()
+    private void UpdateIfNeeded(GrassEntry entry)
     {
-        foreach (var container in _grassContainers)
+        foreach (var container in entry.Containers)
         {
             if (container.RequiresUpdate)
             {
-                _requireUpdate = true;
+                entry.RequireUpdate = true;
+                break;
             }
         }
 
-        if (_requireUpdate)
+        if (entry.RequireUpdate)
         {
-            ForceListUpdate();
+            ForceListUpdate(entry);
 
-            _requireUpdate = false;
+            entry.RequireUpdate = false;
         }
     }
 
-    private void ForceListUpdate()
+    private void ForceListUpdate(GrassEntry entry)
     {
         var count = 0;
 
-        foreach (var container in _grassContainers)
+        foreach (var container in entry.Containers)
         {
             count += container.PositionsRef.Count;
         }
 
         var list = new List<Vector3>(count);
 
-        foreach (var container in _grassContainers)
+        foreach (var container in entry.Containers)
         {
             list.AddRange(container.PositionsRef);
         }
 
-        _renderer.SetGrassPositions(list);
+        entry.Renderer.SetGrassPositions(list);
     }
+
+    [ContextMenu(nameof(CacheRenderers))]
+    private void CacheRenderers()
+    {
+        var components = new List<InstancedIndirectGrassRenderer>();
+
+        GetComponents(components);
+        GetComponentsInChildren(false, components);
+
+        _renderers = components.ToArray();
+    }
+}
+
+public class GrassEntry
+{
+    public string Id;
+    public InstancedIndirectGrassRenderer Renderer;
+    public List<IGrassContainer> Containers;
+    public bool RequireUpdate;
 }

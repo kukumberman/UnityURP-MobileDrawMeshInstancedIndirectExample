@@ -11,6 +11,9 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField]
+    private GrassScriptableObject _grass;
+
+    [SerializeField]
     private bool _receiveShadows = false;
 
     public float drawDistance = 125; //this setting will affect performance a lot!
@@ -28,22 +31,21 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     [SerializeField]
     private Vector2 _threshold = new Vector2(1.1f, 1.5f);
 
-    [SerializeField]
-    private bool _useCustomMesh = false;
-
-    [SerializeField]
-    private Mesh _customMesh = null;
-
     [Header("Internal")]
-    public ComputeShader cullingComputeShader;
+    [SerializeField]
+    private ComputeShader cullingComputeShader;
 
     [SerializeField]
     private bool shouldBatchDispatch = true;
 
     [Header("Debug")]
     [SerializeField]
+    private bool _debugDisplayVisibleCount;
+
+    [SerializeField]
     private int _debugVisibleCount = 0;
 
+    [Space]
     [SerializeField]
     private bool _drawCellsGizmo;
 
@@ -57,6 +59,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     private bool _drawCellLabel;
 
     private List<Vector3> allGrassPos = new List<Vector3>(); //user should update this list using C#
+    private ComputeShader _cullingComputeShader;
 
     //=====================================================
     [HideInInspector]
@@ -72,7 +75,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
     private ICoordinateConverter _coord = null;
 
     private int instanceCountCache = -1;
-    private Mesh cachedGrassMesh;
+    private static Mesh cachedGrassMesh;
 
     private ComputeBuffer allInstancesPosWSBuffer;
     private ComputeBuffer visibleInstancesOnlyPosWSIDBuffer;
@@ -95,21 +98,25 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
     //=====================================================
 
+    public string Id => _grass.Id;
+
     private void Awake()
     {
         cam = Camera.main;
 
+        _cullingComputeShader = Instantiate(cullingComputeShader);
+
         SetupReceiveShadows();
         SetupComputeShaderCulling();
 
-        _mesh = _useCustomMesh ? _customMesh : GetGrassMeshCache();
+        _mesh = _grass.Mesh;
         Debug.Assert(_mesh != null);
 
-        _kernelIndex = cullingComputeShader.FindKernel(
+        _kernelIndex = _cullingComputeShader.FindKernel(
             GrassRendererConstants.ComputeShaderKernelMain
         );
 
-        cullingComputeShader.GetKernelThreadGroupSizes(
+        _cullingComputeShader.GetKernelThreadGroupSizes(
             _kernelIndex,
             out _kernelThreadGroupSizeX,
             out _,
@@ -117,13 +124,23 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         );
     }
 
-    private void OnEnable()
+    private void OnDestroy()
     {
-        instance = this; // assign global ref using this script
+        if (_cullingComputeShader != null)
+        {
+            Destroy(_cullingComputeShader);
+        }
+
+        _cullingComputeShader = null;
     }
 
     private void OnValidate()
     {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
         SetupReceiveShadows();
         SetupComputeShaderCulling();
     }
@@ -179,12 +196,12 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         visibleInstancesOnlyPosWSIDBuffer.SetCounterValue(0);
 
         //set once only
-        cullingComputeShader.SetMatrix(GrassRendererConstants.MaterialParam.VPMatrix, vp);
-        cullingComputeShader.SetFloat(
+        _cullingComputeShader.SetMatrix(GrassRendererConstants.MaterialParam.VPMatrix, vp);
+        _cullingComputeShader.SetFloat(
             GrassRendererConstants.MaterialParam.DrawDistance,
             drawDistance
         );
-        cullingComputeShader.SetVector(
+        _cullingComputeShader.SetVector(
             GrassRendererConstants.MaterialParam.CullingThreshold,
             _threshold
         );
@@ -200,8 +217,15 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         ComputeBuffer.CopyCount(visibleInstancesOnlyPosWSIDBuffer, argsBuffer, 4);
 
 #if UNITY_EDITOR
-        argsBuffer.GetData(argsBufferOutput);
-        _debugVisibleCount = argsBufferOutput[1];
+        if (_debugDisplayVisibleCount)
+        {
+            argsBuffer.GetData(argsBufferOutput);
+            _debugVisibleCount = argsBufferOutput[1];
+        }
+        else
+        {
+            _debugVisibleCount = 0;
+        }
 #endif
 
         // Render 1 big drawcall using DrawMeshInstancedIndirect
@@ -231,8 +255,6 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         if (argsBuffer != null)
             argsBuffer.Release();
         argsBuffer = null;
-
-        instance = null;
     }
 
     private void SetupReceiveShadows()
@@ -246,14 +268,19 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
 
     private void SetupComputeShaderCulling()
     {
+        if (_cullingComputeShader == null)
+        {
+            return;
+        }
+
         const string keyword = "CULLING_PER_CHUNK";
         if (!_useCullingPerGrass)
         {
-            cullingComputeShader.EnableKeyword(keyword);
+            _cullingComputeShader.EnableKeyword(keyword);
         }
         else
         {
-            cullingComputeShader.DisableKeyword(keyword);
+            _cullingComputeShader.DisableKeyword(keyword);
         }
     }
 
@@ -276,7 +303,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         instanceCountCache = 0;
     }
 
-    private Mesh GetGrassMeshCache()
+    private static Mesh GetGrassMeshCache()
     {
         if (!cachedGrassMesh)
         {
@@ -435,12 +462,12 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
         instanceCountCache = allGrassPos.Count;
 
         //set buffer
-        cullingComputeShader.SetBuffer(
+        _cullingComputeShader.SetBuffer(
             _kernelIndex,
             GrassRendererConstants.MaterialParam.AllInstanceBuffer,
             allInstancesPosWSBuffer
         );
-        cullingComputeShader.SetBuffer(
+        _cullingComputeShader.SetBuffer(
             _kernelIndex,
             GrassRendererConstants.MaterialParam.VisibleIndexBuffer,
             visibleInstancesOnlyPosWSIDBuffer
@@ -504,7 +531,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
                 memoryOffset += cellPosWSsList[j].Count;
             }
             //culling read data started at offseted pos, will start from cell's total offset in memory
-            cullingComputeShader.SetInt(
+            _cullingComputeShader.SetInt(
                 GrassRendererConstants.MaterialParam.StartOffset,
                 memoryOffset
             );
@@ -533,7 +560,7 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             }
             //disaptch.X division number must match numthreads.x in compute shader (e.g. 64)
             var threadGroupsX = Mathf.CeilToInt(jobLength / (float)_kernelThreadGroupSizeX);
-            cullingComputeShader.Dispatch(_kernelIndex, threadGroupsX, 1, 1);
+            _cullingComputeShader.Dispatch(_kernelIndex, threadGroupsX, 1, 1);
             dispatchCount++;
         }
     }

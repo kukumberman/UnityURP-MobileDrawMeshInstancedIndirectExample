@@ -11,6 +11,9 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
     }
 
     [SerializeField]
+    private GrassScriptableObject _grass;
+
+    [SerializeField]
     private QuantityType _type;
 
     [SerializeField]
@@ -23,6 +26,8 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
 
     private bool _requiresUpdate;
     private List<Vector3> _positions;
+
+    string IGrassContainer.Id => _grass.Id;
 
     IReadOnlyList<Vector3> IGrassContainer.PositionsRef => _positions;
 

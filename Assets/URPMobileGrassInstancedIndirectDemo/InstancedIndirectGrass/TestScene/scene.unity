@@ -237,8 +237,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ed5d24442417d742ae142da851bdbe2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
   _meshFilter: {fileID: 19429510}
   _sampleCount: 1000
+  _seed: 0
   _useFilterByNormal: 1
   _normalDotThreshold: 0.5
   _targetNormal: {x: 0, y: 1, z: 0}
@@ -388,6 +390,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9d6ee35f46cc6a449199c3d64518325, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
   _type: 0
   _instanceCount: 1000000
   _density: 20
@@ -486,6 +489,7 @@ GameObject:
   - component: {fileID: 74875003}
   - component: {fileID: 74875002}
   - component: {fileID: 74875001}
+  - component: {fileID: 74875005}
   m_Layer: 0
   m_Name: Sphere
   m_TagString: Untagged
@@ -505,8 +509,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ed5d24442417d742ae142da851bdbe2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
   _meshFilter: {fileID: 74875003}
   _sampleCount: 1000
+  _seed: 0
   _useFilterByNormal: 1
   _normalDotThreshold: 0.5
   _targetNormal: {x: 0, y: 1, z: 0}
@@ -581,6 +587,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1913955365}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &74875005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 74875000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ed5d24442417d742ae142da851bdbe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: bba8f579b6d82cd4a8bd5ccaa906894e, type: 2}
+  _meshFilter: {fileID: 74875003}
+  _sampleCount: 500
+  _seed: 1
+  _useFilterByNormal: 0
+  _normalDotThreshold: 0.5
+  _targetNormal: {x: 0, y: 1, z: 0}
+  _useFilterByTextureMask: 1
+  _maskTexture: {fileID: 2800000, guid: a4a13b9837069bb49bf3cd0dca47a33c, type: 3}
+  _maskUvChannelIndex: 0
+  _maskThreshold01: 0.964
+  _drawGizmo: 0
+  _gizmoRadius: 1
 --- !u!1 &88332589
 GameObject:
   m_ObjectHideFlags: 0
@@ -1387,8 +1418,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ed5d24442417d742ae142da851bdbe2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
   _meshFilter: {fileID: 3469287837173895496}
   _sampleCount: 10000
+  _seed: 0
   _useFilterByNormal: 1
   _normalDotThreshold: 0.5
   _targetNormal: {x: 0, y: 1, z: 0}
@@ -2352,8 +2385,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ed5d24442417d742ae142da851bdbe2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
   _meshFilter: {fileID: 3469287838586251800}
   _sampleCount: 10000
+  _seed: 0
   _useFilterByNormal: 1
   _normalDotThreshold: 0.5
   _targetNormal: {x: 0, y: 1, z: 0}
@@ -2477,6 +2512,65 @@ Transform:
   m_Children: []
   m_Father: {fileID: 382660826}
   m_LocalEulerAnglesHint: {x: 10, y: -90, z: 0}
+--- !u!1 &1133138654
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1133138656}
+  - component: {fileID: 1133138655}
+  m_Layer: 0
+  m_Name: GameObject (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1133138655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1133138654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ed67b81fb4b64d498a58bbb1c32d63d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: bba8f579b6d82cd4a8bd5ccaa906894e, type: 2}
+  _receiveShadows: 1
+  drawDistance: 125
+  instanceMaterial: {fileID: 2100000, guid: 63dbde6d07596534b86ce7d745f5e28a, type: 2}
+  _useCullingPerGrass: 1
+  cellSize: {x: 10, y: 10, z: 10}
+  _threshold: {x: 1.1, y: 1.5}
+  cullingComputeShader: {fileID: 7200000, guid: 4ff257ce2a1c37546a9b544e669e976b, type: 3}
+  shouldBatchDispatch: 1
+  _debugDisplayVisibleCount: 0
+  _debugVisibleCount: 0
+  _drawCellsGizmo: 0
+  _drawVisibleCells: 1
+  _drawInvisibleCells: 1
+  _drawCellLabel: 0
+--- !u!4 &1133138656
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1133138654}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1709084318}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1167950356 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3511933678040990990, guid: f6ba7152c8bde8a4683072c5f8fa8d6b, type: 3}
@@ -2646,6 +2740,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9d6ee35f46cc6a449199c3d64518325, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
   _type: 0
   _instanceCount: 100000
   _density: 0
@@ -2661,6 +2756,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9d6ee35f46cc6a449199c3d64518325, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
   _type: 0
   _instanceCount: 50000
   _density: 0
@@ -3332,7 +3428,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1709084318}
   - component: {fileID: 1709084319}
-  - component: {fileID: 1709084317}
   m_Layer: 0
   m_Name: '[GrassManager]'
   m_TagString: Untagged
@@ -3340,33 +3435,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1709084317
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709084316}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ed67b81fb4b64d498a58bbb1c32d63d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _receiveShadows: 1
-  drawDistance: 125
-  instanceMaterial: {fileID: 2100000, guid: 2a0ca5d9e755e74448eaac7a643303db, type: 2}
-  _useCullingPerGrass: 1
-  cellSize: {x: 10, y: 10, z: 10}
-  _threshold: {x: 1.1, y: 1.5}
-  _useCustomMesh: 1
-  _customMesh: {fileID: -5594943449212225110, guid: 996d5008992a2094d91bfa7f1314f1dc, type: 3}
-  cullingComputeShader: {fileID: 7200000, guid: 4ff257ce2a1c37546a9b544e669e976b, type: 3}
-  shouldBatchDispatch: 1
-  _debugVisibleCount: 0
-  _drawCellsGizmo: 0
-  _drawVisibleCells: 1
-  _drawInvisibleCells: 1
-  _drawCellLabel: 0
 --- !u!4 &1709084318
 Transform:
   m_ObjectHideFlags: 0
@@ -3379,7 +3447,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2128428081}
+  - {fileID: 1133138656}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1709084319
@@ -3394,7 +3464,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc2f460457ffb4c4d9c53338bc16c4e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _renderer: {fileID: 1709084317}
+  _renderers:
+  - {fileID: 2128428080}
+  - {fileID: 1133138655}
 --- !u!1 &1721825726
 GameObject:
   m_ObjectHideFlags: 0
@@ -3938,6 +4010,65 @@ Transform:
   - {fileID: 1737672072}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2128428079
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2128428081}
+  - component: {fileID: 2128428080}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2128428080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2128428079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ed67b81fb4b64d498a58bbb1c32d63d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: cffea658a0daa874bbe21fca2b9e1e84, type: 2}
+  _receiveShadows: 1
+  drawDistance: 125
+  instanceMaterial: {fileID: 2100000, guid: 2a0ca5d9e755e74448eaac7a643303db, type: 2}
+  _useCullingPerGrass: 1
+  cellSize: {x: 10, y: 10, z: 10}
+  _threshold: {x: 1.1, y: 1.5}
+  cullingComputeShader: {fileID: 7200000, guid: 4ff257ce2a1c37546a9b544e669e976b, type: 3}
+  shouldBatchDispatch: 1
+  _debugDisplayVisibleCount: 0
+  _debugVisibleCount: 0
+  _drawCellsGizmo: 0
+  _drawVisibleCells: 1
+  _drawInvisibleCells: 1
+  _drawCellLabel: 0
+--- !u!4 &2128428081
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2128428079}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1709084318}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2131105258
 GameObject:
   m_ObjectHideFlags: 0
@@ -4117,6 +4248,7 @@ GameObject:
   - component: {fileID: 3469287837173895496}
   - component: {fileID: 1711813855526888834}
   - component: {fileID: 518469897}
+  - component: {fileID: 3469287837173895497}
   m_Layer: 0
   m_Name: Terrain_test
   m_TagString: Untagged
@@ -4216,6 +4348,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 919132149539013719}
   m_Mesh: {fileID: 3931546471491194837, guid: 0a028d64c806cce439d3a0211fc769d9, type: 3}
+--- !u!114 &3469287837173895497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132149539013719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ed5d24442417d742ae142da851bdbe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _grass: {fileID: 11400000, guid: bba8f579b6d82cd4a8bd5ccaa906894e, type: 2}
+  _meshFilter: {fileID: 3469287837173895496}
+  _sampleCount: 5000
+  _seed: 1
+  _useFilterByNormal: 1
+  _normalDotThreshold: 0.5
+  _targetNormal: {x: 0, y: 1, z: 0}
+  _useFilterByTextureMask: 1
+  _maskTexture: {fileID: 2800000, guid: a4a13b9837069bb49bf3cd0dca47a33c, type: 3}
+  _maskUvChannelIndex: 0
+  _maskThreshold01: 0.5
+  _drawGizmo: 0
+  _gizmoRadius: 1
 --- !u!33 &3469287838586251800
 MeshFilter:
   m_ObjectHideFlags: 0

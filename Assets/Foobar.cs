@@ -6,10 +6,16 @@ using UnityEngine.VFX;
 public class Foobar : MonoBehaviour, IGrassContainer
 {
     [SerializeField]
+    private GrassScriptableObject _grass;
+
+    [SerializeField]
     private MeshFilter _meshFilter;
 
     [SerializeField]
     private int _sampleCount;
+
+    [SerializeField]
+    private int _seed;
 
     [Header("Normal")]
     [SerializeField]
@@ -43,11 +49,15 @@ public class Foobar : MonoBehaviour, IGrassContainer
     [SerializeField]
     private float _gizmoRadius;
 
+    private int _internalSeed;
+
     private Vector2Int _textureSize;
 
     private MeshData.Vertex[] _vertices;
 
     private List<Vector3> _positions;
+
+    string IGrassContainer.Id => _grass.Id;
 
     IReadOnlyList<Vector3> IGrassContainer.PositionsRef => _positions;
 
@@ -73,10 +83,12 @@ public class Foobar : MonoBehaviour, IGrassContainer
     [ContextMenu(nameof(Setup))]
     private void Setup()
     {
+        _internalSeed = _seed >= 0 ? _seed : Random.Range(0, int.MaxValue);
+
         var mesh = _meshFilter.sharedMesh;
 
         var meshData = VFXMeshSamplingHelper.ComputeDataCache(mesh);
-        var rand = new System.Random(1234);
+        var rand = new System.Random(_internalSeed);
         var bakedSampling = new TriangleSampling[_sampleCount];
 
         for (int i = 0; i < _sampleCount; ++i)
