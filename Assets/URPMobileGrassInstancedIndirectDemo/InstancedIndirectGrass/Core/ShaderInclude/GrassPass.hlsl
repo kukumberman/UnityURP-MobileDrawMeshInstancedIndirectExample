@@ -50,8 +50,12 @@ Varyings vert(Attributes IN, uint instanceID : SV_InstanceID)
     float3 cameraTransformUpWS = UNITY_MATRIX_V[1].xyz; //UNITY_MATRIX_V[1].xyz == world space camera Up unit vector
     float3 cameraTransformForwardWS = -UNITY_MATRIX_V[2].xyz; //UNITY_MATRIX_V[2].xyz == -1 * world space camera Forward unit vector
 
+    float randomWidth = 1;
+#if APPLY_RANDOM_WIDTH_ON
     //Expand Billboard (billboard Left+right)
-    float3 positionOS = IN.positionOS.x * cameraTransformRightWS * _GrassWidth * (sin(perGrassPivotPosWS.x * 95.4643 + perGrassPivotPosWS.z) * 0.45 + 0.55); //random width from posXZ, min 0.1
+    randomWidth = sin(perGrassPivotPosWS.x * 95.4643 + perGrassPivotPosWS.z) * 0.45 + 0.55; //random width from posXZ, min 0.1
+#endif
+    float3 positionOS = IN.positionOS.x * cameraTransformRightWS * _GrassWidth * randomWidth;
 
     //Expand Billboard (billboard Up)
     positionOS += IN.positionOS.y * cameraTransformUpWS;
@@ -140,10 +144,30 @@ Varyings vert(Attributes IN, uint instanceID : SV_InstanceID)
     // with a custom one.
     OUT.color = MixFog(lightingResult, fogFactor);
 
+    OUT.uv = TRANSFORM_TEX(IN.uv, _BaseMap);
+    OUT.fogFactor = fogFactor;
+
     return OUT;
+}
+
+half4 frag_color(Varyings IN) : SV_Target
+{
+    return half4(IN.color, 1);
+}
+
+half4 frag_texture(Varyings IN) : SV_Target
+{
+    half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
+    color.rgb = MixFog(color.rgb, IN.fogFactor);
+    clip(color.a - _AlphaClip);
+    return color;
 }
 
 half4 frag(Varyings IN) : SV_Target
 {
-    return half4(IN.color, 1);
+#if USE_VERTEX_COLOR_ON
+    return frag_color(IN);
+#else
+    return frag_texture(IN);
+#endif
 }

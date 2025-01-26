@@ -3,6 +3,8 @@
     Properties
     {
         [MainColor] _BaseColor("BaseColor", Color) = (1,1,1,1)
+        _BaseMap("Base Map", 2D) = "white"
+
         _BaseColorTexture("_BaseColorTexture", 2D) = "white" {}
         _GroundColor("_GroundColor", Color) = (0.5,0.5,0.5)
 
@@ -29,6 +31,10 @@
 
         [Header(Lighting)]
         _RandomNormal("_RandomNormal", Float) = 0.15
+
+        [Toggle(USE_VERTEX_COLOR_ON)] _UseVertexColor("Use vertex color", Int) = 0
+        [Toggle(APPLY_RANDOM_WIDTH_ON)] _ApplyRandomWidth("Apply random width", Int) = 0
+        _AlphaClip ("Alpha Cutoff", Range(0,1)) = 0.5
 
         //make SRP batcher happy
         [HideInInspector]_PivotPosWS("_PivotPosWS", Vector) = (0,0,0,0)
@@ -63,6 +69,8 @@
             #pragma fragment frag
 
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+            #pragma shader_feature USE_VERTEX_COLOR_ON
+            #pragma shader_feature APPLY_RANDOM_WIDTH_ON
 
             // -------------------------------------
             // Universal Render Pipeline keywords

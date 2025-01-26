@@ -1,9 +1,11 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
 {
+    public Func<Vector3, Vector3> VertexPositionTransformer;
+
     private enum QuantityType
     {
         InstanceCount,
@@ -21,6 +23,12 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
 
     [SerializeField]
     private float _density;
+
+    [SerializeField]
+    private int _seed;
+
+    [SerializeField]
+    private float _heightOffset;
 
     private int _cacheCount = -1;
 
@@ -83,13 +91,14 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
             return;
 
         //same seed to keep grass visual the same
-        UnityEngine.Random.InitState(123);
+        var random = new System.Random(_seed);
 
         //auto keep density the same
         //float scale = Mathf.Sqrt((instanceCount / 4)) / 2f;
         //transform.localScale = new Vector3(scale, transform.localScale.y, scale);
         var currentScale = transform.lossyScale;
         var halfScale = currentScale * 0.5f;
+        var origin = transform.position;
 
         //////////////////////////////////////////////////////////////////////////
         //can define any posWS in this section, random is just an example
@@ -99,13 +108,28 @@ public class InstancedIndirectGrassPosDefine : MonoBehaviour, IGrassContainer
         {
             Vector3 pos = Vector3.zero;
 
-            pos.x = UnityEngine.Random.Range(-1f, 1f) * halfScale.x;
-            pos.z = UnityEngine.Random.Range(-1f, 1f) * halfScale.z;
+            pos.x = Mathf.Lerp(-1f, 1f, (float)random.NextDouble()) * halfScale.x;
+            pos.z = Mathf.Lerp(-1f, 1f, (float)random.NextDouble()) * halfScale.z;
 
             //transform to posWS in C#
-            pos += transform.position;
+            pos += origin;
 
             _positions.Add(new Vector3(pos.x, pos.y, pos.z));
+        }
+
+        if (VertexPositionTransformer != null)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                _positions[i] = VertexPositionTransformer.Invoke(_positions[i]);
+            }
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            var pos = _positions[i];
+            pos.y += _heightOffset;
+            _positions[i] = pos;
         }
 
         _cacheCount = _positions.Count;

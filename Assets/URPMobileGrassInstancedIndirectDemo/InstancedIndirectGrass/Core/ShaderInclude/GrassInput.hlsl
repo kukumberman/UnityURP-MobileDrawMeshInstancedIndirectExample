@@ -1,15 +1,19 @@
 struct Attributes
 {
     float4 positionOS : POSITION;
+    float2 uv : TEXCOORD0;
 };
 
 struct Varyings
 {
     float4 positionCS : SV_POSITION;
     half3 color : COLOR;
+    float2 uv : TEXCOORD0;
+    float fogFactor : TEXCOORD1;
 };
 
 CBUFFER_START(UnityPerMaterial)
+float4 _BaseMap_ST;
 float3 _PivotPosWS;
 float3 _BoundSize;
 
@@ -43,3 +47,7 @@ CBUFFER_END
 
 sampler2D _GrassBendingRT;
 sampler2D _BaseColorTexture;
+
+TEXTURE2D(_BaseMap);
+SAMPLER(sampler_BaseMap);
+float _AlphaClip;
