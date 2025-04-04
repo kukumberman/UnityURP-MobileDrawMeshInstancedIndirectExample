@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.VFX;
 
-public class Foobar : MonoBehaviour, IGrassContainer
+public sealed class MeshGrassContainerBehaviour : MonoBehaviour, IGrassContainer
 {
     [SerializeField]
     private GrassScriptableObject _grass;
