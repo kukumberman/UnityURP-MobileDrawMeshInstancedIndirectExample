@@ -43,6 +43,7 @@ Varyings vert(Attributes IN, uint instanceID : SV_InstanceID)
     //get "is grass stepped" data(bending) from RT
     float2 grassBendingUV = ((perGrassPivotPosWS.xz - _PivotPosWS.xz) / _BoundSize.xz) * 0.5 + 0.5; //claculate where is this grass inside bound (can optimize to 2 MAD)
     float stepped = tex2Dlod(_GrassBendingRT, float4(grassBendingUV, 0, 0)).x;
+    stepped = 1; // Dima: value of 1 means do not apply bending to grass (do not use GrassBendingRTPrePass since it is 1d texture)
 
     //rotation(make grass LookAt() camera just like a billboard)
     //=========================================

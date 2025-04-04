@@ -7,11 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: InstancedIndirectGrass
+  m_Name: MI_InstancedIndirectGrass 1
   m_Shader: {fileID: 4800000, guid: fd090f3b1d7b5df4f9c363d609cfa330, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - USE_VERTEX_COLOR_ON
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
@@ -25,7 +26,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseColorTexture:
-        m_Texture: {fileID: 2800000, guid: 852d5637d063a164eb7e64de17a4ea34, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3fa62efa70d477046bcab98fc3e5d887, type: 3}
         m_Scale: {x: 0.02, y: 0.02}
         m_Offset: {x: -0.43, y: -1.87}
     - _BaseMap:
@@ -64,6 +65,7 @@ Material:
     - _Cull: 1
     m_Floats:
     - _AlphaClip: 0
+    - _ApplyRandomWidth: 0
     - _Blend: 0
     - _BoundSize: 50
     - _BoundSizeX: 50
@@ -77,7 +79,7 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _GrassHeight: 1
+    - _GrassHeight: 2
     - _GrassWidth: 1
     - _Metallic: 0
     - _OcclusionStrength: 1
@@ -90,23 +92,24 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _Surface: 0
+    - _UseVertexColor: 1
     - _WindAFrequency: 4
-    - _WindAIntensity: 0.25
+    - _WindAIntensity: 0
     - _WindBFrequency: 7.7
-    - _WindBIntensity: 0.06
+    - _WindBIntensity: 0
     - _WindCFrequency: 11.7
-    - _WindCIntensity: 0.04
+    - _WindCIntensity: 0
     - _WindFrequency: 4
     - _WindIntensity: 1
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _BoundSize: {r: 71.99666, g: 52.618027, b: 99.99904, a: 0}
+    - _BoundSize: {r: 47.559025, g: 9.046136, b: 35.08918, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _GroundColor: {r: 0.2195755, g: 0.46226418, b: 0.2581851, a: 1}
-    - _PivotPosWS: {r: 0.0014266968, g: 26.309013, b: 24.99989, a: 0}
+    - _GroundColor: {r: 0.4156863, g: 0.227451, b: 0, a: 1}
+    - _PivotPosWS: {r: -7.24164, g: 10.056803, b: 8.590626, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _WindADirection: {r: 0.1, g: 0.1, b: 0, a: 1}
     - _WindATiling: {r: 0.1, g: 0.1, b: 0, a: 1}

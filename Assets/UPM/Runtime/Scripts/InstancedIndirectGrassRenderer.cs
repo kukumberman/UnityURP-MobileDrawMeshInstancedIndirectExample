@@ -479,9 +479,12 @@ public class InstancedIndirectGrassRenderer : MonoBehaviour
             * allGrassPos.Count;
         int totalTriangleCount = _mesh.triangles.Length / 3 * allGrassPos.Count;
 
-        Debug.LogFormat("Grass instance count: {0}", allGrassPos.Count);
-        Debug.LogFormat("VRAM consumption: {0}", ValueFormatter.PrettyBytes(totalBytes));
-        Debug.LogFormat("Triangles: {0}", ValueFormatter.PrettyCount(totalTriangleCount));
+        var sb = new System.Text.StringBuilder();
+        sb.AppendFormat("InstancedIndirectGrassRenderer: <b>{0}</b>\n", gameObject.name);
+        sb.AppendFormat("Grass instance count: {0}\n", allGrassPos.Count);
+        sb.AppendFormat("VRAM consumption: {0}\n", ValueFormatter.PrettyBytes(totalBytes));
+        sb.AppendFormat("Triangles: {0}\n", ValueFormatter.PrettyCount(totalTriangleCount));
+        Debug.Log(sb.ToString(), this);
     }
 
     private void CalculateBounds()

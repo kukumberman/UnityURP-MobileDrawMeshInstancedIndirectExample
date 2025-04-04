@@ -90,6 +90,16 @@ public class GrassManager : MonoBehaviour
 
     private void UpdateIfNeeded(GrassEntry entry)
     {
+        if (!entry.Renderer.enabled)
+        {
+            return;
+        }
+
+        if (!entry.Renderer.gameObject.activeSelf)
+        {
+            return;
+        }
+
         foreach (var container in entry.Containers)
         {
             if (container.RequiresUpdate)

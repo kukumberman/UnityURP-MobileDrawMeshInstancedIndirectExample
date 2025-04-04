@@ -1,0 +1,10 @@
+{
+  "name": "com.kukumberman.unity-instanced-grass-renderer",
+  "version": "1.0.0",
+  "displayName": "Instanced Grass Renderer",
+  "description": "todo",
+  "unity": "2022.3",
+  "documentationUrl": "https://github.com/kukumberman/UnityURP-MobileDrawMeshInstancedIndirectExample",
+  "dependencies": {
+  }
+}
